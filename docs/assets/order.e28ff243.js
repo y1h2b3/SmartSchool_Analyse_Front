@@ -1,0 +1,1 @@
+import{r as e}from"./request.15ef03ef.js";function u(r,a,t,s,f){return e({url:"/searchStaffOrders",method:"get",params:{current:r,size:a,id:t,name:s,type:f}})}function n(r){return e({url:"/searchStaff",method:"get",params:{isOnline:r}})}function c(r){return e({url:"/saveStaffOrders",method:"post",data:r})}export{n as a,u as b,c as s};
