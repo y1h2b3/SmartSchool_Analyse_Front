@@ -34,6 +34,10 @@ import parentOrderTableRouter from './modules/parent/order'
  * 教师端路由
  */
 import teacherIndexTableRouter from './modules/teacher'
+/**
+ * 测试路由
+ */
+import testRouter from './modules/test'
 
 const adminRouter = [
   /* 管理端路由 */
@@ -111,6 +115,8 @@ export const constantRoutes: Array<RouteRecordRaw & extendRoute> = [
     hidden: true,
     meta: { title: '登录' },
   },
+  // 测试路由
+  ...testRouter,
 ]
 
 const router = createRouter({
