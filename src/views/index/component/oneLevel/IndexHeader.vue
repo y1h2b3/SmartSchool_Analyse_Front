@@ -6,28 +6,15 @@
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
-  // 计算属性：获取格式化地址
+  // 计算属性:直接使用 store 的 formattedAddress getter
   const formattedAddress = computed(() => {
     console.log('🔍 IndexHeader - locationInfo:', WeatherStore.locationInfo)
     console.log('🔍 IndexHeader - isLocating:', WeatherStore.isLocating)
 
-    if (!WeatherStore.locationInfo) return '获取中...'
-    const { address, district, city, province, latitude, longitude, source } =
-      WeatherStore.locationInfo
-
-    // 优先显示完整地址
-    if (address) return address
-
-    // 组合省市区
-    const locationStr = `${province || ''}${city || ''}${district || ''}`
-    if (locationStr.trim()) {
-      console.log('🔍 IndexHeader - 格式化地址:', locationStr)
-      return locationStr
-    }
-
-    // 如果没有地址信息，显示经纬度
-    console.log('⚠️ IndexHeader - 没有地址信息，显示坐标')
-    return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+    if (WeatherStore.isLocating) return '获取中...'
+    
+    // 使用 store 的 formattedAddress getter (仅显示市+区)
+    return WeatherStore.formattedAddress
   })
 
   // 获取位置信息
@@ -79,7 +66,13 @@
 
 <template>
   <div class="position_box">
-    <el-icon :size="16" color="#000" :class="{ loading: isLoading }" @click="forceRefresh" style="cursor: pointer">
+    <el-icon
+      :size="16"
+      color="#000"
+      :class="{ loading: isLoading }"
+      @click="forceRefresh"
+      style="cursor: pointer"
+    >
       <Location />
     </el-icon>
     <span class="text" :title="formattedAddress">{{ formattedAddress }}</span>

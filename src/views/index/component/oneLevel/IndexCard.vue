@@ -14,20 +14,20 @@
     const weather = WeatherStore.weatherData
     if (!weather) {
       return [
-        { logo: '/src/assets/image/index/温度-黑.png', value: '--℃', key: '室外温度' },
-        { logo: '/src/assets/image/index/湿度-黑.png', value: '--%', key: '室外湿度' },
-        { logo: '/src/assets/image/index/多云-黑.png', value: '--%', key: '云量' },
-        { logo: '/src/assets/image/index/紫外线-黑.png', value: '--', key: '紫外线' },
-        { logo: '/src/assets/image/index/体感-黑.png', value: '--℃', key: '体感' },
+        { icon: 'Sunny', value: '--℃', key: '室外温度' },
+        { icon: 'Drizzling', value: '--%', key: '室外湿度' },
+        { icon: 'Cloudy', value: '--%', key: '云量' },
+        { icon: 'Compass', value: '--hPa', key: '气压' },
+        { icon: 'MostlyCloudy', value: '--℃', key: '体感' },
       ]
     }
 
     return [
-      { logo: '/src/assets/image/index/温度-黑.png', value: formatTemperature(weather.temp), key: '室外温度' },
-      { logo: '/src/assets/image/index/湿度-黑.png', value: `${weather.humidity}%`, key: '室外湿度' },
-      { logo: '/src/assets/image/index/多云-黑.png', value: `${weather.cloudiness}%`, key: '云量' },
-      { logo: '/src/assets/image/index/紫外线-黑.png', value: weather.uvIndex ? String(weather.uvIndex) : '无', key: '紫外线' },
-      { logo: '/src/assets/image/index/体感-黑.png', value: formatTemperature(weather.feelsLike), key: '体感' },
+      { icon: 'Sunny', value: formatTemperature(weather.temp), key: '室外温度' },
+      { icon: 'Drizzling', value: `${weather.humidity}%`, key: '室外湿度' },
+      { icon: 'Cloudy', value: `${weather.cloudiness}%`, key: '云量' },
+      { icon: 'Compass', value: `${weather.pressure}hPa`, key: '气压' },
+      { icon: 'MostlyCloudy', value: formatTemperature(weather.feelsLike), key: '体感' },
     ]
   })
 
@@ -65,7 +65,9 @@
     <div class="footer" :class="{ loading: isLoadingWeather }">
       <template v-for="item in weatherList" :key="item.value">
         <div class="weather-item" :class="{ skeleton: isLoadingWeather }">
-          <div class="logo" :style="{ backgroundImage: `url(${item.logo})` }"></div>
+          <el-icon :size="40" class="weather-icon">
+            <component :is="item.icon" />
+          </el-icon>
           <span class="value">{{ item.value }}</span>
           <span class="key">{{ item.key }}</span>
         </div>
@@ -149,14 +151,8 @@
 
         &.skeleton {
           opacity: 0.6;
-          .logo {
-            background: linear-gradient(
-              90deg,
-              #f0f0f0 25%,
-              #e0e0e0 50%,
-              #f0f0f0 75%
-            );
-            background-size: 1000px 100%;
+          .weather-icon {
+            opacity: 0.3;
             animation: shimmer 2s infinite;
           }
           .value,
@@ -173,11 +169,9 @@
           }
         }
 
-        .logo {
-          width: 50px;
-          height: 50px;
-          background-image: url('/src/assets/test.jpg');
-          background-size: cover;
+        .weather-icon {
+          color: #333;
+          transition: all 0.3s ease;
         }
         .value {
           font-size: 18px;

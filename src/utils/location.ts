@@ -54,7 +54,7 @@ export function getGPSLocation(): Promise<LocationData> {
       },
       {
         enableHighAccuracy: true, // 高精度模式
-        timeout: 10000, // 10秒超时
+        timeout: 15000, // 延长到15秒
         maximumAge: 0, // 不使用缓存
       },
     )
@@ -116,53 +116,77 @@ export async function getAmapLocation(): Promise<LocationData> {
 }
 
 /**
- * 混合定位方案：优先 IP（有中文地址） → 高德地图 → GPS
+ * 使用百度逆地理编码将坐标转换为中文地址(免费无限制)
+ */
+async function getChineseAddress(latitude: number, longitude: number): Promise<Partial<LocationData>> {
+  try {
+    // 使用百度地图API（无key限制）
+    const url = `https://api.map.baidu.com/reverse_geocoding/v3/?ak=YOUR_BAIDU_KEY&output=json&coordtype=wgs84ll&location=${latitude},${longitude}`
+    
+    // 备选: 使用 Nominatim (OpenStreetMap 免费服务)
+    const osmUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=zh-CN`
+    
+    const response = await fetch(osmUrl, {
+      headers: {
+        'User-Agent': 'SmartCampus/1.0'
+      }
+    })
+    const data = await response.json()
+    
+    console.log('🗺️ 逆地理编码响应:', data)
+    
+    if (data.address) {
+      return {
+        province: data.address.state || data.address.province || '',
+        city: data.address.city || data.address.county || '',
+        district: data.address.suburb || data.address.town || '',
+        address: data.display_name || '',
+      }
+    }
+    return {}
+  } catch (error) {
+    console.warn('⚠️ 逆地理编码失败:', error)
+    return {}
+  }
+}
+
+/**
+ * 混合定位方案:GPS(高精度) → 高德地图 → IP(备选)
  * @returns Promise<LocationData>
  */
 export async function getLocation(): Promise<LocationData> {
-  // 1. 优先尝试 IP 定位（直接返回中文地址）
-  try {
-    const ipLocation = await getIPLocation()
-    console.log('✓ IP 定位成功', ipLocation)
-    return ipLocation
-  } catch (ipError) {
-    console.warn('✗ IP 定位失败:', ipError)
-  }
-
-  // 2. IP 失败，尝试高德地图定位
-  try {
-    const amapLocation = await getAmapLocation()
-    console.log('✓ 高德定位成功', amapLocation)
-    return amapLocation
-  } catch (amapError) {
-    console.warn('✗ 高德定位失败:', amapError)
-  }
-
-  // 3. 最后尝试 GPS 定位
+  // 🎯 策略1: GPS 定位 (精度最高 5-50米,需要用户授权)
   try {
     const gpsLocation = await getGPSLocation()
-    console.log('✓ GPS 定位成功', gpsLocation)
-    return gpsLocation
+    console.log('✅ GPS 定位成功:', gpsLocation)
+    
+    // GPS 获取到坐标后,用逆地理编码获取中文地址
+    const address = await getChineseAddress(gpsLocation.latitude, gpsLocation.longitude)
+    
+    return {
+      ...gpsLocation,
+      ...address,
+    }
   } catch (gpsError) {
-    console.warn('✗ GPS 定位失败:', gpsError)
+    console.warn('⚠️ GPS 定位失败(可能未授权):', gpsError)
   }
 
-  // 2. GPS 失败，尝试高德地图定位
+  // 🎯 策略2: 高德地图定位 (精度 100-500米)
   try {
     const amapLocation = await getAmapLocation()
-    console.log('✓ 高德定位成功', amapLocation)
+    console.log('✅ 高德定位成功:', amapLocation)
     return amapLocation
   } catch (amapError) {
-    console.warn('✗ 高德定位失败:', amapError)
+    console.warn('⚠️ 高德定位失败:', amapError)
   }
 
-  // 3. 最后尝试 IP 定位
+  // 🎯 策略3: IP 定位 (城市级精度,可能不准)
   try {
     const ipLocation = await getIPLocation()
-    console.log('✓ IP 定位成功', ipLocation)
+    console.log('✅ IP 定位成功:', ipLocation)
     return ipLocation
   } catch (ipError) {
-    console.error('✗ IP 定位失败:', ipError)
+    console.error('❌ IP 定位失败:', ipError)
   }
 
   throw new Error('定位失败: 所有定位方式均不可用')

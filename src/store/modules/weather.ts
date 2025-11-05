@@ -16,11 +16,16 @@ export const useWeatherStore = defineStore({
     lastWeatherUpdateTime: null as number | null,
   }),
   getters: {
-    // 获取当前位置的格式化地址
+    // 获取当前位置的格式化地址（仅显示市+区）
     formattedAddress: (state) => {
       if (!state.locationInfo) return '未知位置'
-      const { province, city, district, address } = state.locationInfo
-      return address || `${province || ''}${city || ''}${district || ''}`
+      const { city, district } = state.locationInfo
+      
+      // 仅显示市和区
+      if (city && district) {
+        return `${city} ${district}`
+      }
+      return city || district || '未知位置'
     },
     // 判断是否需要更新定位（超过 30 分钟）
     needsLocationUpdate: (state) => {

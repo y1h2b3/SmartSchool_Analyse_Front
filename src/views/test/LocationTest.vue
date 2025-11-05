@@ -14,6 +14,9 @@
         <el-button @click="handleResetLocation" :disabled="isLocating">
           重置定位
         </el-button>
+        <el-button type="danger" @click="handleClearCache">
+          🗑️ 清除缓存
+        </el-button>
         <el-button type="info" @click="handleGetGPSOnly" :loading="isLocatingGPS">
           仅 GPS 定位
         </el-button>
@@ -314,6 +317,19 @@ function handleResetLocation() {
 function handleClearLog() {
   logs.value = []
   addLog('日志已清空', 'info')
+}
+
+// 清除缓存
+function handleClearCache() {
+  // 清除 localStorage
+  localStorage.removeItem('weatherStore')
+  // 重置 Store
+  weatherStore.resetAll()
+  // 重置当前页面数据
+  locationData.value = null
+  errorMessage.value = ''
+  addLog('✅ 缓存已清除，请重新定位', 'success')
+  ElMessage.success('缓存已清除！')
 }
 
 onMounted(() => {
