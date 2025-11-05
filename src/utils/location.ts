@@ -62,40 +62,28 @@ export function getGPSLocation(): Promise<LocationData> {
 }
 
 /**
- * 获取 IP 定位信息
+ * 获取 IP 定位信息 (使用免费公共 API)
  * @returns Promise<LocationData>
  */
 export function getIPLocation(): Promise<LocationData> {
   return new Promise((resolve, reject) => {
-    // 第一步：获取用户 IP
-    fetch('https://api.ipify.org?format=json')
+    // 使用免费的 ip-api.com 服务 (无需 Key,支持中文)
+    fetch('http://ip-api.com/json/?lang=zh-CN&fields=status,message,country,countryCode,region,regionName,city,lat,lon')
       .then((response) => response.json())
       .then((data) => {
-        const ip = data.ip
-        // 第二步：通过 IP 获取地理位置
-        return fetch(`https://api.vore.top/api/IPdata?ip=${ip}`).then((res) =>
-          res.json(),
-        )
-      })
-      .then((locationData) => {
-        console.log('IP 定位响应:', locationData)
-        if (locationData) {
-          // 处理两种不同的 API 响应格式
-          const data = locationData.data || locationData
-          if (data && (data.lat !== undefined || data.latitude !== undefined)) {
-            resolve({
-              latitude: data.lat || data.latitude || 0,
-              longitude: data.lon || data.longitude || 0,
-              source: 'ip',
-              city: data.city || '',
-              province: data.province || '',
-              country: data.country || '',
-            })
-          } else {
-            reject(new Error('IP 定位数据无效'))
-          }
+        console.log('✅ IP 定位响应:', data)
+        
+        if (data.status === 'success') {
+          resolve({
+            latitude: data.lat || 0,
+            longitude: data.lon || 0,
+            source: 'ip',
+            city: data.city || '',
+            province: data.regionName || '',
+            country: data.country || '',
+          })
         } else {
-          reject(new Error('IP 定位数据无效'))
+          reject(new Error(`IP 定位失败: ${data.message || '未知错误'}`))
         }
       })
       .catch((error) => {
@@ -128,33 +116,33 @@ export async function getAmapLocation(): Promise<LocationData> {
 }
 
 /**
- * 混合定位方案：优先 GPS → 高德地图 → IP
+ * 混合定位方案：优先 IP（有中文地址） → 高德地图 → GPS
  * @returns Promise<LocationData>
  */
 export async function getLocation(): Promise<LocationData> {
-  // 1. 优先尝试 GPS 定位
+  // 1. 优先尝试 IP 定位（直接返回中文地址）
+  try {
+    const ipLocation = await getIPLocation()
+    console.log('✓ IP 定位成功', ipLocation)
+    return ipLocation
+  } catch (ipError) {
+    console.warn('✗ IP 定位失败:', ipError)
+  }
+
+  // 2. IP 失败，尝试高德地图定位
+  try {
+    const amapLocation = await getAmapLocation()
+    console.log('✓ 高德定位成功', amapLocation)
+    return amapLocation
+  } catch (amapError) {
+    console.warn('✗ 高德定位失败:', amapError)
+  }
+
+  // 3. 最后尝试 GPS 定位
   try {
     const gpsLocation = await getGPSLocation()
     console.log('✓ GPS 定位成功', gpsLocation)
-    
-    // GPS 成功后，尝试获取详细地址（非阻塞）
-    try {
-      const { getAddressByCoordinates } = await import('./amap')
-      const addressInfo = await getAddressByCoordinates(
-        gpsLocation.latitude,
-        gpsLocation.longitude,
-      )
-      return {
-        ...gpsLocation,
-        city: addressInfo.city,
-        province: addressInfo.province,
-        district: addressInfo.district,
-        address: addressInfo.address,
-      }
-    } catch (error) {
-      console.warn('逆地理编码失败，返回 GPS 基础信息')
-      return gpsLocation
-    }
+    return gpsLocation
   } catch (gpsError) {
     console.warn('✗ GPS 定位失败:', gpsError)
   }

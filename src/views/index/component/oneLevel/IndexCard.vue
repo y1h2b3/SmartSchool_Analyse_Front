@@ -1,32 +1,70 @@
 <script lang="ts" setup>
-  import { ref } from 'vue'
-  import IndexHeade from './IndexHeader.vue'
+  import { ref, onMounted, computed } from 'vue'
+  import IndexHeader from './IndexHeader.vue'
   import { useUserStore } from '../../../../store/modules/user'
+  import { useWeatherStore } from '@/store/modules/weather'
+  import { formatTemperature } from '@/api/weather'
+
   const UserStore = useUserStore()
-  const weatherList = ref([
-    { logo: '/src/assets/image/index/温度-黑.png', value: '26℃', key: '室外温度' },
-    { logo: '/src/assets/image/index/湿度-黑.png', value: '96%', key: '室外湿度' },
-    { logo: '/src/assets/image/index/多云-黑.png', value: '90.5%', key: '云量' },
-    { logo: '/src/assets/image/index/紫外线-黑.png', value: '最弱', key: '紫外线' },
-    { logo: '/src/assets/image/index/体感-黑.png', value: '24℃', key: '体感' },
-  ])
+  const WeatherStore = useWeatherStore()
+  const isLoadingWeather = ref(false)
+
+  // 计算天气数据
+  const weatherList = computed(() => {
+    const weather = WeatherStore.weatherData
+    if (!weather) {
+      return [
+        { logo: '/src/assets/image/index/温度-黑.png', value: '--℃', key: '室外温度' },
+        { logo: '/src/assets/image/index/湿度-黑.png', value: '--%', key: '室外湿度' },
+        { logo: '/src/assets/image/index/多云-黑.png', value: '--%', key: '云量' },
+        { logo: '/src/assets/image/index/紫外线-黑.png', value: '--', key: '紫外线' },
+        { logo: '/src/assets/image/index/体感-黑.png', value: '--℃', key: '体感' },
+      ]
+    }
+
+    return [
+      { logo: '/src/assets/image/index/温度-黑.png', value: formatTemperature(weather.temp), key: '室外温度' },
+      { logo: '/src/assets/image/index/湿度-黑.png', value: `${weather.humidity}%`, key: '室外湿度' },
+      { logo: '/src/assets/image/index/多云-黑.png', value: `${weather.cloudiness}%`, key: '云量' },
+      { logo: '/src/assets/image/index/紫外线-黑.png', value: weather.uvIndex ? String(weather.uvIndex) : '无', key: '紫外线' },
+      { logo: '/src/assets/image/index/体感-黑.png', value: formatTemperature(weather.feelsLike), key: '体感' },
+    ]
+  })
+
+  // 获取天气数据
+  const getWeatherData = async () => {
+    if (isLoadingWeather.value) return
+    
+    isLoadingWeather.value = true
+    try {
+      await WeatherStore.getWeatherData()
+    } catch (error) {
+      console.error('获取天气失败:', error)
+    } finally {
+      isLoadingWeather.value = false
+    }
+  }
+
+  onMounted(() => {
+    getWeatherData()
+  })
 </script>
 
 <template>
   <div class="card-content">
     <div class="header">
       <div class="top">
-        <span class="title">你好，{{ UserStore.userInfo.username }}！</span>
-        <IndexHeade></IndexHeade>
+        <span class="title">你好，{{ UserStore.userInfo?.username }}！</span>
+        <IndexHeader></IndexHeader>
         <!-- <el-icon style="cursor: pointer"><MoreFilled /></el-icon> -->
       </div>
       <div class="bottom">
         <span>当前健康指数正常，希望你继续保持健康的状态！</span>
       </div>
     </div>
-    <div class="footer">
+    <div class="footer" :class="{ loading: isLoadingWeather }">
       <template v-for="item in weatherList" :key="item.value">
-        <div class="weather-item">
+        <div class="weather-item" :class="{ skeleton: isLoadingWeather }">
           <div class="logo" :style="{ backgroundImage: `url(${item.logo})` }"></div>
           <span class="value">{{ item.value }}</span>
           <span class="key">{{ item.key }}</span>
@@ -37,6 +75,15 @@
 </template>
 
 <style lang="scss" scoped>
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+
   .card-content {
     width: 100%;
     padding: 5px 20px 20px 20px;
@@ -97,6 +144,35 @@
         flex-direction: column;
         align-items: center;
         justify-content: space-around;
+        opacity: 1;
+        transition: opacity 0.3s ease;
+
+        &.skeleton {
+          opacity: 0.6;
+          .logo {
+            background: linear-gradient(
+              90deg,
+              #f0f0f0 25%,
+              #e0e0e0 50%,
+              #f0f0f0 75%
+            );
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite;
+          }
+          .value,
+          .key {
+            background: linear-gradient(
+              90deg,
+              #f0f0f0 25%,
+              #e0e0e0 50%,
+              #f0f0f0 75%
+            );
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite;
+            color: transparent;
+          }
+        }
+
         .logo {
           width: 50px;
           height: 50px;
@@ -106,6 +182,7 @@
         .value {
           font-size: 18px;
           color: #000;
+          font-weight: 600;
         }
         .key {
           font-size: 12px;

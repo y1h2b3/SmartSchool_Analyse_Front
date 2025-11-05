@@ -38,39 +38,43 @@ async function initAMap(): Promise<any> {
 }
 
 /**
- * 逆地理编码 - 根据经纬度获取地址
+ * 逆地理编码 - 根据经纬度获取地址（使用 REST API）
  */
 export async function getAddressByCoordinates(
   latitude: number,
   longitude: number,
 ): Promise<any> {
   try {
-    const AMap = await initAMap()
-    const geocoder = new AMap.Geocoder()
-
-    return new Promise((resolve, reject) => {
-      geocoder.getAddress([longitude, latitude], (status: string, result: any) => {
-        if (status === 'complete' && result.info === 'OK') {
-          const regeocode = result.regeocode
-          const addressComponent = regeocode.addressComponent
-          
-          resolve({
-            success: true,
-            address: regeocode.formattedAddress,
-            province: addressComponent.province,
-            city: addressComponent.city,
-            district: addressComponent.district,
-            township: addressComponent.township,
-            street: addressComponent.street,
-            adcode: addressComponent.adcode,
-          })
-        } else {
-          reject(new Error('逆地理编码失败'))
-        }
-      })
-    })
+    // 使用高德 Web 服务 API（REST API）
+    const location = `${longitude},${latitude}`
+    const url = `/amap/v3/geocode/regeo?key=${AMAP_CONFIG.key}&location=${location}&output=json`
+    
+    console.log('🔍 高德 REST API 请求:', url)
+    
+    const response = await fetch(url)
+    const data = await response.json()
+    
+    console.log('🔍 高德 REST API 响应:', data)
+    
+    if (data.status === '1' && data.info === 'OK') {
+      const regeocode = data.regeocode
+      const addressComponent = regeocode.addressComponent
+      
+      return {
+        success: true,
+        address: regeocode.formatted_address,
+        province: addressComponent.province,
+        city: addressComponent.city || addressComponent.province, // 如果没有 city，使用 province
+        district: addressComponent.district,
+        township: addressComponent.township,
+        street: addressComponent.streetNumber?.street || '',
+        adcode: addressComponent.adcode,
+      }
+    } else {
+      throw new Error(`高德逆地理编码失败: ${data.info}`)
+    }
   } catch (error) {
-    console.error('✗ 逆地理编码异常:', error)
+    console.error('✗ 高德 REST API 错误:', error)
     throw error
   }
 }

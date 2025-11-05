@@ -82,6 +82,11 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/openweathermap/, ''),
         },
+        '/amap': {
+          target: 'https://restapi.amap.com/',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/amap/, ''),
+        },
       },
     },
     // 生产环境打包配置
