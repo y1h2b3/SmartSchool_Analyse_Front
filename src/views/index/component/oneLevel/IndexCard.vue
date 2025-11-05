@@ -9,25 +9,64 @@
   const WeatherStore = useWeatherStore()
   const isLoadingWeather = ref(false)
 
+  // 根据温度获取图标
+  const getTempIcon = (temp: number) => {
+    if (temp >= 35) return '🥵' // 高温
+    if (temp >= 25) return '🌡️' // 热
+    if (temp >= 15) return '☀️' // 温暖
+    if (temp >= 5) return '🌤️' // 凉爽
+    return '❄️' // 寒冷
+  }
+
+  // 根据湿度获取图标
+  const getHumidityIcon = (humidity: number) => {
+    if (humidity >= 80) return '💧' // 潮湿
+    if (humidity >= 60) return '💦' // 正常
+    return '🌬️' // 干燥
+  }
+
+  // 根据云量获取图标
+  const getCloudIcon = (cloudiness: number) => {
+    if (cloudiness >= 80) return '☁️' // 阴天
+    if (cloudiness >= 50) return '🌥️' // 多云
+    if (cloudiness >= 20) return '⛅' // 少云
+    return '☀️' // 晴天
+  }
+
+  // 根据气压获取图标
+  const getPressureIcon = (pressure: number) => {
+    if (pressure >= 1020) return '🔼' // 高压
+    if (pressure >= 1000) return '🧭' // 正常
+    return '🔽' // 低压
+  }
+
+  // 根据风速获取图标
+  const getWindIcon = (windSpeed: number) => {
+    if (windSpeed >= 10) return '🌪️' // 狂风
+    if (windSpeed >= 5) return '💨' // 大风
+    if (windSpeed >= 2) return '🍃' // 微风
+    return '🍁' // 无风
+  }
+
   // 计算天气数据
   const weatherList = computed(() => {
     const weather = WeatherStore.weatherData
     if (!weather) {
       return [
-        { icon: 'Sunny', value: '--℃', key: '室外温度' },
-        { icon: 'Drizzling', value: '--%', key: '室外湿度' },
-        { icon: 'Cloudy', value: '--%', key: '云量' },
-        { icon: 'Compass', value: '--hPa', key: '气压' },
-        { icon: 'MostlyCloudy', value: '--℃', key: '体感' },
+        { icon: '🌡️', value: '--℃', key: '室外温度' },
+        { icon: '💧', value: '--%', key: '室外湿度' },
+        { icon: '☁️', value: '--%', key: '云量' },
+        { icon: '🧭', value: '--hPa', key: '气压' },
+        { icon: '🍃', value: '--m/s', key: '风速' },
       ]
     }
 
     return [
-      { icon: 'Sunny', value: formatTemperature(weather.temp), key: '室外温度' },
-      { icon: 'Drizzling', value: `${weather.humidity}%`, key: '室外湿度' },
-      { icon: 'Cloudy', value: `${weather.cloudiness}%`, key: '云量' },
-      { icon: 'Compass', value: `${weather.pressure}hPa`, key: '气压' },
-      { icon: 'MostlyCloudy', value: formatTemperature(weather.feelsLike), key: '体感' },
+      { icon: getTempIcon(weather.temp), value: formatTemperature(weather.temp), key: '室外温度' },
+      { icon: getHumidityIcon(weather.humidity), value: `${weather.humidity}%`, key: '室外湿度' },
+      { icon: getCloudIcon(weather.cloudiness), value: `${weather.cloudiness}%`, key: '云量' },
+      { icon: getPressureIcon(weather.pressure), value: `${weather.pressure}hPa`, key: '气压' },
+      { icon: getWindIcon(weather.windSpeed), value: `${weather.windSpeed.toFixed(1)}m/s`, key: '风速' },
     ]
   })
 
@@ -65,9 +104,7 @@
     <div class="footer" :class="{ loading: isLoadingWeather }">
       <template v-for="item in weatherList" :key="item.value">
         <div class="weather-item" :class="{ skeleton: isLoadingWeather }">
-          <el-icon :size="40" class="weather-icon">
-            <component :is="item.icon" />
-          </el-icon>
+          <span class="weather-icon">{{ item.icon }}</span>
           <span class="value">{{ item.value }}</span>
           <span class="key">{{ item.key }}</span>
         </div>
@@ -170,7 +207,7 @@
         }
 
         .weather-icon {
-          color: #333;
+          font-size: 40px;
           transition: all 0.3s ease;
         }
         .value {
