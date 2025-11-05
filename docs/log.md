@@ -1,5 +1,240 @@
 # SmartCampus 开发日志
 
+## 2025-11-05
+
+### 任务：天气与定位功能完善
+
+#### 1. 定位系统优化
+
+##### 1.1 GPS 优先策略 + 逆地理编码
+- **修改文件**: `src/utils/location.ts`
+- **变更**：
+  - 定位优先级：GPS(高精度 5-50米) → 高德地图 → IP(备选)
+  - GPS 超时时间：10秒 → 15秒
+  - 新增 `getChineseAddress()` 函数：使用 OpenStreetMap Nominatim API 进行逆地理编码
+  - 新增动态函数：`getTempIcon()`, `getHumidityIcon()`, `getCloudIcon()`, `getPressureIcon()`, `getWindIcon()`
+
+##### 1.2 IP 定位 API 更换
+- **原 API**: `api.ipify.org` + `api.vore.top` (国内被墙)
+- **新API**: `ip-api.com` (免费、无需Key、支持中文)
+- **返回数据**：
+  ```javascript
+  {
+    status: "success",
+    country: "中国",
+    regionName: "广东",
+    city: "广州",
+    lat: 23.1291,
+    lon: 113.2644
+  }
+  ```
+
+##### 1.3 高德地图集成
+- **新增文件**: `src/utils/amap.ts`
+- **功能**: 使用高德地图 JavaScript SDK 进行定位
+- **API 配置**：
+  - Key: `5fd05918e767ec572cb16a99a4e647bc`
+  - 安全密钥: `066fe469482ef640461c35c640e21ea3`
+
+##### 1.4 Vite 代理配置
+- **修改文件**: `vite.config.ts`
+- **新增代理**：
+  - `/amap` → `https://restapi.amap.com`
+  - 解决 CORS 跨域问题
+
+#### 2. 天气 API 集成
+
+##### 2.1 OpenWeatherMap 集成
+- **新增文件**: `src/api/weather.ts` (289行)
+- **API Key**: `f2767ce16ef8bac65d38f9c60de0f3d5`
+- **功能**：
+  - `getCurrentWeather()` - 获取当前天气
+  - `getWeatherForecast()` - 获取未来5天预报
+  - `getFullWeatherData()` - 获取完整天气数据
+
+- **返回数据**：
+  ```typescript
+  interface WeatherData {
+    temp: number              // 温度 ℃
+    feelsLike: number         // 体感温度
+    humidity: number          // 湿度 %
+    pressure: number          // 气压 hPa
+    windSpeed: number         // 风速 m/s
+    windDeg: number           // 风向 度
+    visibility: number        // 能见度 m
+    cloudiness: number        // 云量 %
+    description: string       // 天气描述(中文)
+    sunrise: number           // 日出时间戳
+    sunset: number            // 日落时间戳
+  }
+  ```
+
+##### 2.2 Vite 代理配置
+- **新增代理**: `/openweathermap` → `https://api.openweathermap.org`
+- **避免 CORS 问题**
+
+#### 3. 状态管理优化
+
+##### 3.1 Weather Store 重构
+- **修改文件**: `src/store/modules/weather.ts` (231行)
+- **新增状态**：
+  ```typescript
+  locationInfo: LocationData | null
+  weatherData: WeatherData | null
+  isLocating: boolean
+  isFetchingWeather: boolean
+  lastLocationUpdateTime: number | null
+  lastWeatherUpdateTime: number | null
+  ```
+
+- **新增 Getters**：
+  - `formattedAddress` - 格式化地址（仅显示市+区）
+  - `needsLocationUpdate` - 判断是否需要更新定位（30分钟）
+  - `needsWeatherUpdate` - 判断是否需要更新天气（10分钟）
+  - `currentTempText` - 当前温度文本
+  - `currentWeatherText` - 当前天气描述
+
+- **新增 Actions**：
+  - `getLocationInfo()` - 智能三级降级定位
+  - `getWeatherData()` - 获取天气数据
+  - `resetLocation()` / `resetWeather()` / `resetAll()` - 清除缓存
+
+- **缓存策略**：
+  - 定位缓存: 30分钟
+  - 天气缓存: 10分钟
+  - 数据持久化: localStorage
+
+#### 4. UI 组件集成
+
+##### 4.1 IndexHeader.vue 优化
+- **修改文件**: `src/views/index/component/oneLevel/IndexHeader.vue`
+- **功能**：
+  - 显示实时位置（市+区格式）
+  - 加载动画效果
+  - 错误提示
+  - 点击图标强制刷新
+  - 使用 `formattedAddress` getter
+
+##### 4.2 IndexCard.vue 重构
+- **修改文件**: `src/views/index/component/oneLevel/IndexCard.vue`
+- **显示数据**：
+  - 🌡️ 室外温度 (动态图标: 35℃+ → 🥵, 25-35℃ → 🌡️, 15-25℃ → ☀️, 5-15℃ → 🌤️, <5℃ → ❄️)
+  - 💧 室外湿度 (动态图标: 80%+ → 💧, 60-80% → 💦, <60% → 🌬️)
+  - ☁️ 云量 (动态图标: 80%+ → ☁️, 50-80% → 🌥️, 20-50% → ⛅, <20% → ☀️)
+  - 🧭 气压 (动态图标: 1020hPa+ → 🔼, 1000-1020hPa → 🧭, <1000hPa → 🔽)
+  - 🍃 风速 (动态图标: ≥10m/s → 🌪️, 5-10m/s → 💨, 2-5m/s → 🍃, <2m/s → 🍁)
+
+- **特性**：
+  - Skeleton 加载动画
+  - 使用 emoji 图标替代图片
+  - 根据天气数据动态变化图标
+  - 实时数据更新
+
+#### 5. TypeScript 配置优化
+
+##### 5.1 模块解析修复
+- **修改文件**: `tsconfig.json`
+- **新增配置**：
+  ```json
+  {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  }
+  ```
+
+##### 5.2 Vue 模块声明
+- **新增文件**: `src/env.d.ts`
+- **内容**: Vue 模块声明，解决 TypeScript 导入错误
+
+#### 6. 测试页面增强
+
+##### 6.1 清除缓存功能
+- **修改文件**: `src/views/test/LocationTest.vue`
+- **新增功能**：
+  - 🗑️ 清除缓存按钮
+  - 清除 localStorage 中的 weatherStore 数据
+  - 重置 Store 状态
+
+#### 7. 表格宽度统一
+
+##### 7.1 修改所有表格组件宽度
+- **修改文件** (5个):
+  - `personnelManagement/teacherManagement/component/teacherTable.vue`
+  - `medicalServices/hospitalInfo/manage/component/Table.vue`
+  - `personnelManagement/logisticalManagement/component/logisticalTable.vue`
+  - `personnelManagement/studentManagement/component/studentTable.vue`
+  - `personnelManagement/parentManagement/component/parentTable.vue`
+
+- **变更**: 
+  - 原宽度: `915px / 1065px`
+  - 新宽度: `1065px / 1200px`
+  - 侧边栏收起: 1065px
+  - 侧边栏展开: 1200px
+
+#### 8. 文档创建
+
+##### 8.1 集成指南
+- **新增文件**: `docs/integration-guide.md` (334行)
+- **内容**: 天气与定位功能完整使用指南
+
+##### 8.2 集成检查清单
+- **新增文件**: `docs/INTEGRATION_CHECKLIST.md` (297行)
+- **内容**: 验证步骤和测试清单
+
+#### 9. 问题解决
+
+##### 9.1 高德地图 API Key 平台错误
+- **问题**: `USERKEY_PLAT_NOMATCH` (infocode: 10009)
+- **原因**: API Key 被绑定到特定平台
+- **解决**: 使用免费的 ip-api.com 替代
+
+##### 9.2 紫外线数据缺失
+- **问题**: OpenWeatherMap 免费 API 不包含 UV 数据
+- **解决**: 改为显示气压数据
+
+##### 9.3 体感温度替换为风速
+- **变更**: 将第5个指标从体感温度改为风速
+- **原因**: 显示更多天气维度
+
+#### 10. 技术亮点
+
+- ✅ 三级定位降级策略
+- ✅ 逆地理编码获取中文地址
+- ✅ OpenWeatherMap 实时天气集成
+- ✅ Pinia 状态管理与缓存
+- ✅ Vite 代理解决 CORS
+- ✅ Emoji 图标动态化
+- ✅ Skeleton 加载动画
+- ✅ TypeScript 完整类型支持
+
+#### 11. API 配置汇总
+
+```javascript
+// 高德地图
+Key: 5fd05918e767ec572cb16a99a4e647bc
+安全密钥: 066fe469482ef640461c35c640e21ea3
+
+// OpenWeatherMap
+API Key: f2767ce16ef8bac65d38f9c60de0f3d5
+
+// IP 定位
+API: ip-api.com (免费无限制)
+
+// 逆地理编码
+API: nominatim.openstreetmap.org (免费)
+```
+
+#### 12. 后续优化计划
+
+- ⚡ 天气预警功能
+- ⚡ 历史天气数据图表
+- ⚡ 位置分享功能
+- ⚡ 离线缓存优化
+
+---
+
 ## 2025-11-04
 
 ### 任务：实现混合定位方案
