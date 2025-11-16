@@ -7,6 +7,8 @@ export function getAllOrders(size) {
     params: {
       current: 1,
       size,
+      orders: 'o.create_time',
+      isAsc: false,
     },
   })
 }
@@ -21,6 +23,8 @@ export function getSearchOrders(current, size, oid, uid, type) {
       oid,
       uid,
       type,
+      orders: 'o.create_time',
+      isAsc: false,
     },
   })
 }

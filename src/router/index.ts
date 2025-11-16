@@ -14,6 +14,7 @@ import medicalServicesRouter from './modules/admin/medicalServices'
 import alertNoticeRouter from './modules/admin/alertNotice'
 import systemAdministrationRouter from './modules/admin/systemAdministration'
 import dataAnalyticsRouter from './modules/admin/dataAnalytics'
+import paymentTestRouter from './modules/admin/paymentTest'
 /**
  * 用户端路由
  */
@@ -49,6 +50,7 @@ const adminRouter = [
   ...alertNoticeRouter,
   ...systemAdministrationRouter,
   ...dataAnalyticsRouter,
+  ...paymentTestRouter,
 ]
 
 const userRouter = [
@@ -65,7 +67,7 @@ const parentRouter = [
   ...parentIndexTableRouter,
   ...parentHealthTableRouter,
   ...parentNoticeTableRouter,
-  /* ...parentStoreTableRouter, */
+  ...parentStoreTableRouter,
   ...parentOrderTableRouter,
 ]
 
