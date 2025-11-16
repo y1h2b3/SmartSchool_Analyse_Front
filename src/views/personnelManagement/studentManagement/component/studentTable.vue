@@ -280,7 +280,7 @@
           class="el-table"
           ref="tableRef"
           :style="{
-            width: `${settingStore.isCollapse ? 1065 : 1200}px`,
+            width: `${settingStore.isCollapse ? 1400 : 1200}px`,
             height: `${settingStore.isFull ? 580 : 440}px !important`,
           }"
           @selection-change="handleSelectionChange"
@@ -366,72 +366,72 @@
       align-items: center;
       padding: 19px 50px 0 0;
       box-sizing: border-box;
-    .el-form {
-      display: flex;
-      justify-content: flex-start;
-      .el-form-item {
-        margin: 0px;
-        .el-input {
-          width: 200px;
+      .el-form {
+        display: flex;
+        justify-content: flex-start;
+        .el-form-item {
+          margin: 0px;
+          .el-input {
+            width: 200px;
+          }
         }
       }
     }
-  }
-  .bottom {
-    flex: 1;
-    background-color: #fff;
-    margin-top: 14px;
-    padding: 0 15px;
-    box-sizing: border-box;
-    .el-button-box {
-      height: 80px;
-      display: flex;
-      justify-content: flex-start;
-      align-items: center;
-    }
-    .el-table-inner {
+    .bottom {
       flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      align-items: center;
-      .el-table {
-        transition: all 0.2s;
-        .optionStyle {
-          width: 120px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          .button {
-            width: 55px;
-            height: 25px;
-            color: #fff;
-            font-size: 11px;
-            border: none;
+      background-color: #fff;
+      margin-top: 14px;
+      padding: 0 15px;
+      box-sizing: border-box;
+      .el-button-box {
+        height: 80px;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+      }
+      .el-table-inner {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        .el-table {
+          transition: all 0.2s;
+          .optionStyle {
+            width: 120px;
             display: flex;
-            justify-content: space-around;
+            justify-content: space-between;
             align-items: center;
-          }
-          .primaryStyle {
-            border-radius: 3px;
-            background-color: #409eff;
-          }
-          .primaryStyle:hover {
-            opacity: 0.7;
-          }
-          .dangerStyle {
-            border-radius: 3px;
-            background-color: #f56c6c;
-          }
-          .dangerStyle:hover {
-            opacity: 0.7;
+            .button {
+              width: 55px;
+              height: 25px;
+              color: #fff;
+              font-size: 11px;
+              border: none;
+              display: flex;
+              justify-content: space-around;
+              align-items: center;
+            }
+            .primaryStyle {
+              border-radius: 3px;
+              background-color: #409eff;
+            }
+            .primaryStyle:hover {
+              opacity: 0.7;
+            }
+            .dangerStyle {
+              border-radius: 3px;
+              background-color: #f56c6c;
+            }
+            .dangerStyle:hover {
+              opacity: 0.7;
+            }
           }
         }
-      }
-      .demo-pagination-block {
-        margin-top: 10px;
+        .demo-pagination-block {
+          margin-top: 10px;
+        }
       }
     }
   }
-}
 </style>

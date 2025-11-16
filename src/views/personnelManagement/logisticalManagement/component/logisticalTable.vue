@@ -273,7 +273,7 @@
           class="el-table"
           ref="tableRef"
           :style="{
-            width: `${settingStore.isCollapse ? 1065 : 1200}px`,
+            width: `${settingStore.isCollapse ? 1400 : 1200}px`,
             height: `${settingStore.isFull ? 580 : 440}px !important`,
           }"
           @selection-change="handleSelectionChange"
