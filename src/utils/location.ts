@@ -7,7 +7,7 @@ export interface LocationData {
   latitude: number
   longitude: number
   accuracy?: number
-  source: 'gps' | 'ip' | 'amap'
+  source: 'gps' | 'ip' | 'amap' | 'manual'
   city?: string
   province?: string
   country?: string
@@ -190,6 +190,49 @@ export async function getLocation(): Promise<LocationData> {
   }
 
   throw new Error('定位失败: 所有定位方式均不可用')
+}
+
+/**
+ * 根据城市名称获取经纬度（地理编码）
+ * 使用 OpenStreetMap Nominatim API
+ * @param cityName 城市名称（如："北京"、"上海"、"广州"）
+ * @returns Promise<LocationData>
+ */
+export async function getCityLocation(cityName: string): Promise<LocationData> {
+  try {
+    // 使用 Nominatim 地理编码服务（免费）
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityName)}&format=json&accept-language=zh-CN&limit=1`
+    
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'SmartCampus/1.0'
+      }
+    })
+    
+    const data = await response.json()
+    console.log('🗺️ 城市地理编码响应:', data)
+    
+    if (data && data.length > 0) {
+      const result = data[0]
+      
+      // 获取详细地址信息
+      const addressParts = result.display_name.split(', ')
+      
+      return {
+        latitude: parseFloat(result.lat),
+        longitude: parseFloat(result.lon),
+        source: 'manual',
+        city: cityName,
+        address: result.display_name,
+        country: addressParts[addressParts.length - 1] || '',
+      }
+    } else {
+      throw new Error('未找到该城市，请检查城市名称')
+    }
+  } catch (error: any) {
+    console.error('❌ 城市地理编码失败:', error)
+    throw new Error(`城市定位失败: ${error.message}`)
+  }
 }
 
 /**

@@ -7,7 +7,9 @@
 
   const UserStore = useUserStore()
   const WeatherStore = useWeatherStore()
-  const isLoadingWeather = ref(false)
+  
+  // 使用 computed 监听 Store 的 isFetchingWeather 状态
+  const isLoadingWeather = computed(() => WeatherStore.isFetchingWeather)
 
   // 根据温度获取图标
   const getTempIcon = (temp: number) => {
@@ -70,21 +72,18 @@
     ]
   })
 
-  // 获取天气数据
+  // 获取天气数据（首次加载时调用）
   const getWeatherData = async () => {
-    if (isLoadingWeather.value) return
-    
-    isLoadingWeather.value = true
     try {
       await WeatherStore.getWeatherData()
     } catch (error) {
       console.error('获取天气失败:', error)
-    } finally {
-      isLoadingWeather.value = false
     }
   }
 
   onMounted(() => {
+    // 首次加载时获取天气数据
+    // 后续定位更新会自动触发天气刷新，isLoadingWeather 会自动响应
     getWeatherData()
   })
 </script>

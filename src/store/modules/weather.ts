@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { getLocation, getGPSLocation, getAmapLocation, getIPLocation, type LocationData } from '@/utils/location'
+import { getLocation, getGPSLocation, getAmapLocation, getIPLocation, getCityLocation, type LocationData } from '@/utils/location'
 import { getFullWeatherData, getCurrentWeather, type WeatherData } from '@/api/weather'
 
 export const useWeatherStore = defineStore({
@@ -124,6 +124,30 @@ export const useWeatherStore = defineStore({
       } catch (error) {
         console.error('IP 定位失败:', error)
         return null
+      } finally {
+        this.isLocating = false
+      }
+    },
+
+    /**
+     * 手动设置城市位置（通过城市名称）
+     * @param cityName 城市名称（如："北京"、"上海"、"广州"）
+     */
+    async setLocationByCity(cityName: string): Promise<LocationData | null> {
+      if (!cityName || cityName.trim() === '') {
+        throw new Error('城市名称不能为空')
+      }
+
+      this.isLocating = true
+      try {
+        const location = await getCityLocation(cityName)
+        this.locationInfo = location
+        this.lastLocationUpdateTime = Date.now()
+        console.log('✅ 手动设置位置成功:', location)
+        return location
+      } catch (error: any) {
+        console.error('❌ 手动设置位置失败:', error)
+        throw error
       } finally {
         this.isLocating = false
       }
