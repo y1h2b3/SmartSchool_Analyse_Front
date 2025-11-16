@@ -51,7 +51,7 @@
   }
   // 日期格式转换
   const formatDate = (date: Date) => {
-    return dayjs(date).format('YYYY-MM-DD hh:mm:ss')
+    return dayjs(date).format('YYYY-MM-DD HH:mm:ss')
   }
   // 刷新数据
   const freshData = () => {
@@ -66,7 +66,6 @@
       const endTime = fuzzyFormData.endTime
       const resp = await searchOrders(current, size, oid, uid, type, startTime, endTime)
       tableList.value = resp.records
-      tableList.value.reverse()
       for (let i = 0; i < tableList.value.length; i++) {
         tableList.value[i].order = (currentPage.value - 1) * pageSize.value + i + 1
         tableList.value[i].time = formatDate(tableList.value[i].time)
@@ -97,7 +96,7 @@
   watch(
     isTwoFuzzy,
     (val) => {
-      if (val) getTableHeight.value = 645
+      if (SettingStore.isFull) getTableHeight.value = 645
       else getTableHeight.value = 520
       if (val) getTableHeight.value -= 50
     },

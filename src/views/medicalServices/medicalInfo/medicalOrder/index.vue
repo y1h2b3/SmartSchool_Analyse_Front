@@ -166,7 +166,7 @@
   }
   // 日期格式转换
   const formatDate = (date: Date) => {
-    return dayjs(date).format('YYYY-MM-DD hh:mm:ss')
+    return dayjs(date).format('YYYY-MM-DD HH:mm:ss')
   }
   // 刷新数据
   const freshData = () => {

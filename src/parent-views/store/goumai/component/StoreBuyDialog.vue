@@ -49,34 +49,38 @@
         // 效验错误
         return
       }
-      await ElMessageBox.confirm('请确认是否要购买？', '提示', {
-        confirmButtonText: '确认购买',
-        cancelButtonText: '取消',
-        type: 'warning',
-      })
-      const dona_drugId = props.rowData.drugId
-      const dona_money = props.rowData.price
-      const dona_sum = formData.value.quantity
-      const dona_userId = UserStore.userInfo.studentId
-      window.open(
-        `http://localhost:8081/pay/alipay?dona_drugId=${dona_drugId}&dona_money=${dona_money}&dona_sum=${dona_sum}&dona_userId=${dona_userId}`,
-        '_blank',
-      )
-      // 调用支付接口
-      await addOrders({
-        // userId: UserStore.userInfo.username,
-        userId: UserStore.userInfo.studentId,
-        drugId: props.rowData.drugId,
-        price: props.rowData.price,
-        orderStatus: '待支付',
-        quantity: formData.value.quantity,
-        totalPrice: formData.value.totalPrice,
-      })
-      dialogVisible.value = false
-      await ElMessageBox.alert('支付失败', '支付提示', {
-        confirmButtonText: '确定',
-        type: 'error',
-      })
+      
+      try {
+        await ElMessageBox.confirm('请确认是否要购买？', '提示', {
+          confirmButtonText: '确认购买',
+          cancelButtonText: '取消',
+          type: 'warning',
+        })
+        
+        const dona_drugId = props.rowData.drugId
+        const dona_money = props.rowData.price
+        const dona_sum = formData.value.quantity
+        const dona_userId = UserStore.userInfo.studentId
+        
+        // 打开支付页面
+        window.open(
+          `http://localhost:8081/pay/alipay?dona_drugId=${dona_drugId}&dona_money=${dona_money}&dona_sum=${dona_sum}&dona_userId=${dona_userId}`,
+          '_blank',
+        )
+        
+        // 显示提示：支付页面已打开
+        ElMessage.success('支付页面已打开，请在新窗口中完成支付')
+        
+        // 关闭弹窗
+        dialogVisible.value = false
+        
+      } catch (error) {
+        // 用户取消或错误
+        if (error !== 'cancel') {
+          console.error('支付错误:', error)
+          ElMessage.error('支付失败，请重试')
+        }
+      }
     })
   }
   watch(

@@ -139,7 +139,7 @@
   </el-scrollbar>
   <el-scrollbar
     class="table-content"
-    :style="{ height: `${settingStore.isFull ? 700 : 570}px !important` }"
+    :style="{ height: `${settingStore.isFull ? 750 : 600}px !important` }"
   >
     <div
       v-if="isLoading"
