@@ -14,7 +14,6 @@ import medicalServicesRouter from './modules/admin/medicalServices'
 import alertNoticeRouter from './modules/admin/alertNotice'
 import systemAdministrationRouter from './modules/admin/systemAdministration'
 import dataAnalyticsRouter from './modules/admin/dataAnalytics'
-import paymentTestRouter from './modules/admin/paymentTest'
 /**
  * 用户端路由
  */
@@ -35,10 +34,6 @@ import parentOrderTableRouter from './modules/parent/order'
  * 教师端路由
  */
 import teacherIndexTableRouter from './modules/teacher'
-/**
- * 测试路由
- */
-import testRouter from './modules/test'
 
 const adminRouter = [
   /* 管理端路由 */
@@ -50,7 +45,6 @@ const adminRouter = [
   ...alertNoticeRouter,
   ...systemAdministrationRouter,
   ...dataAnalyticsRouter,
-  ...paymentTestRouter,
 ]
 
 const userRouter = [
@@ -117,8 +111,6 @@ export const constantRoutes: Array<RouteRecordRaw & extendRoute> = [
     hidden: true,
     meta: { title: '登录' },
   },
-  // 测试路由
-  ...testRouter,
 ]
 
 const router = createRouter({
