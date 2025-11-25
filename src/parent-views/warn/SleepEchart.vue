@@ -24,14 +24,17 @@
     xAxis: {
       type: 'category',
       splitLine: { show: false },
-      data: ['周六', '周日', '周一', '周二', '周三', '周四', '周五']
+      data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
     },
     yAxis: {
       type: 'value',
+      min: 0,
+      max: 800,
+      interval: 200,
       axisLabel: {
       formatter: function (value, index) {
         // 自定义每个刻度的标签
-        var customLabels = ['08:00', '06:00', '04:00', '02:00', '00:00'];
+        var customLabels = ['00:00', '02:00', '04:00', '06:00', '08:00'];
         return customLabels[index];
       }
     }
@@ -51,7 +54,7 @@
             color: 'transparent'
           }
         },
-        data: [0, 0, 87, 92 , 99 , 0, 150]
+        data: [0, 0, 0, 0, 0, 0, 0]
       },
       {
         name: 'Life Cost',
@@ -66,7 +69,7 @@
         },
         barGap: '80%', // 设置柱状图之间的间距为100%
         barCategoryGap: '50%', // 设置柱状图类目（x 轴）之间的间距为50%
-        data: [700, 750, 660, 550, 600, 650, 500]
+        data: [660, 550, 600, 650, 500, 700, 750]
       }
     ]
   }
