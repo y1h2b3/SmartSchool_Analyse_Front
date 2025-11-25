@@ -63,12 +63,27 @@
       fontSize:14,
     })
   }
+  // 数组随机排序函数（Fisher-Yates洗牌算法）
+  const shuffleArray = (array) => {
+    const shuffled = [...array]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+    return shuffled
+  }
+  
   const reasondata=async()=>{
         await request({
       url:'/findAllStudentWarning'
     }).then((res)=>{
       chartInstance.hideLoading()
-      res = res.slice(3)
+
+      // res = res.slice(3)
+      // 只展示14个标签（两页，每页7个）
+      // res = res.slice(0, 14)
+      // 打乱数组的顺序，我想每次不一样
+      res = shuffleArray(res.slice(0, 14))
       res.map((item)=>{
         option.series[0].data=res.map((item)=>{
           return{
