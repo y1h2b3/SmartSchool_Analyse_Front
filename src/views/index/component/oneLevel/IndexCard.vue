@@ -100,6 +100,8 @@
         <span>当前健康指数正常，希望你继续保持健康的状态！</span>
       </div>
     </div>
+
+    <!-- 天气信息展示 -->
     <div class="footer" :class="{ loading: isLoadingWeather }">
       <template v-for="item in weatherList" :key="item.value">
         <div class="weather-item" :class="{ skeleton: isLoadingWeather }">

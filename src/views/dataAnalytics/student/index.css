@@ -30,6 +30,7 @@ a:active {
 
 .constant_header {
   background: #040f3c;
+  min-height: 100vh;
 }
 
 .header {

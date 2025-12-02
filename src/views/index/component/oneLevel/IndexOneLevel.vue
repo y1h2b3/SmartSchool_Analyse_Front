@@ -30,9 +30,11 @@
 
 <template>
   <div class="content">
+    <!-- 左侧：欢迎卡片 -->
     <div class="card">
       <IndexCard></IndexCard>
     </div>
+    <!-- 右侧：健康进度条 -->
     <div class="progress-box">
       <div class="progress">
         <IndexProgress :option="option1"></IndexProgress>

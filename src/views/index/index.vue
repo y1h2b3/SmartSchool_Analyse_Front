@@ -8,8 +8,11 @@
 <template>
   <div class="app-container">
     <div class="app-container-inner">
+      <!-- 第一层：欢迎卡片 + 健康进度条 -->
       <IndexOneLevel></IndexOneLevel>
+      <!-- 第二层：数据统计图表 -->
       <IndexTwoLevel></IndexTwoLevel>
+      <!-- 第三层：其他功能模块 -->
       <IndexThreeLevel></IndexThreeLevel>
     </div>
   </div>

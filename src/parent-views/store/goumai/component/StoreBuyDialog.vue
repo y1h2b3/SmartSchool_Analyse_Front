@@ -64,7 +64,7 @@
         
         // 打开支付页面
         window.open(
-          `http://localhost:8081/pay/alipay?dona_drugId=${dona_drugId}&dona_money=${dona_money}&dona_sum=${dona_sum}&dona_userId=${dona_userId}`,
+          `http://localhost:8718/pay/alipay?dona_drugId=${dona_drugId}&dona_money=${dona_money}&dona_sum=${dona_sum}&dona_userId=${dona_userId}`,
           '_blank',
         )
         

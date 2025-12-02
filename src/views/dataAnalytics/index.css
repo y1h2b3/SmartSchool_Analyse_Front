@@ -11,8 +11,9 @@ a:visited,
 a:active {
   text-decoration: none;
 }
-.constant_header{
+.constant_header {
   background: #040f3c;
+  min-height: 100vh;
 }
 
 .header{

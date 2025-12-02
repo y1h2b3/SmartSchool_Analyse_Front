@@ -24,7 +24,7 @@
     xAxis: {
       type: 'category',
       splitLine: { show: false },
-      data: ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+      data: [ '周一', '周二', '周三', '周四', '周五', '周六' , '周日']
     },
     yAxis: {
       type: 'value',
@@ -51,7 +51,7 @@
             color: 'transparent'
           }
         },
-        data: [120, 0, 87, 92 , 99 , 0, 150]
+        data: [0, 0, 0, 0, 0 , 0, 0]
       },
       {
         name: 'Life Cost',

@@ -3,6 +3,7 @@ const dataAnalyticsTable = [
     path: '/data',
     name: 'dataAnalytics',
     meta: { title: '健康数据分析', keepAlive: true, icon: 'Histogram' },
+    alwaysShow: true,
     children: [
       {
         path: '/student-data',
@@ -15,12 +16,14 @@ const dataAnalyticsTable = [
         component: () => import('@/views/dataAnalytics/teacher/index.vue'),
         name: 'teacherData',
         meta: { title: '教师健康分析', keepAlive: true, icon: 'MenuIcon' },
+        hidden: true,
       },
       {
         path: '/logistics-data',
         component: () => import('@/views/dataAnalytics/logistics/index.vue'),
         name: 'logisticalData',
         meta: { title: '后勤健康分析', keepAlive: true, icon: 'MenuIcon' },
+        hidden: true,
       },
     ],
   },

@@ -1,4 +1,4 @@
-// http://localhost:8081/pay/alipay?dona_drugId=O123&dona_money=32.21&dona_sum=3&dona_userId=S1231312
+// http://localhost:8718/pay/alipay?dona_drugId=O123&dona_money=32.21&dona_sum=3&dona_userId=S1231312
 
 import request from '@/utils/request.ts'
 

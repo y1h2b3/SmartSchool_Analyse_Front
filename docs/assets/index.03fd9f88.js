@@ -1,1 +1,0 @@
-import{r as i}from"./request.15ef03ef.js";function n(t,o,e){return i({url:"/notifications",method:"get",params:{current:t,size:o,orders:"create_time",isAsc:!0,user:e}})}function s(t){return i({url:`/notifications/${t}`,method:"delete"})}function a(t){return i({url:"/notifications",method:"post",data:t})}export{a,s as d,n as g};
