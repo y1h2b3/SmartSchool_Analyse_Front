@@ -1,5 +1,6 @@
 <script lang="ts" setup>
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { FirstAidKit } from '@element-plus/icons-vue'
   import { computed, ref, watch } from 'vue'
   import { addOrders } from '@/api/parent/order.ts'
   import { payZFB } from '@/api/pay/pay.ts'
@@ -117,13 +118,11 @@
     <div class="top">
       <el-descriptions size="default" column="3" border>
         <el-descriptions-item label="药品图片">
-          <el-avatar
-            shape="square"
-            :size="70"
-            fit="cover"
-            src="./src/assets/image/index/商品.png"
-            style="border-radius: 20px; background-color: #fff"
-          />
+          <div style="display: flex; justify-content: center; align-items: center; width: 70px; height: 70px; border-radius: 20px; background-color: #f5f7fa;">
+            <el-icon :size="50" color="#409EFF">
+              <FirstAidKit />
+            </el-icon>
+          </div>
         </el-descriptions-item>
         <el-descriptions-item label="药品名称">
           <template #label>

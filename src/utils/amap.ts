@@ -7,7 +7,7 @@ import AMapLoader from '@amap/amap-jsapi-loader'
 
 // 高德地图配置
 const AMAP_CONFIG = {
-  key: '5fd05918e767ec572cb16a99a4e647bc',
+  key: '97d46cfa6c03fc5506ca5990c932ae2b',
   securityJsCode: '066fe469482ef640461c35c640e21ea3',
   version: '2.0',
   plugins: ['AMap.Geocoder', 'AMap.Geolocation'],
@@ -23,16 +23,21 @@ async function initAMap(): Promise<any> {
   if (AMap) return AMap
 
   try {
+    // 清理可能存在的旧实例
+    if (window.AMap) {
+      AMap = window.AMap
+      return AMap
+    }
+
     AMap = await AMapLoader.load({
       key: AMAP_CONFIG.key,
       version: AMAP_CONFIG.version,
       plugins: AMAP_CONFIG.plugins,
       securityJsCode: AMAP_CONFIG.securityJsCode,
     })
-    console.log('✓ 高德地图初始化成功')
     return AMap
   } catch (error) {
-    console.error('✗ 高德地图初始化失败:', error)
+    console.error('高德地图初始化错误:', error)
     throw new Error(`高德地图初始化失败: ${error}`)
   }
 }
@@ -49,12 +54,8 @@ export async function getAddressByCoordinates(
     const location = `${longitude},${latitude}`
     const url = `/amap/v3/geocode/regeo?key=${AMAP_CONFIG.key}&location=${location}&output=json`
     
-    console.log('🔍 高德 REST API 请求:', url)
-    
     const response = await fetch(url)
     const data = await response.json()
-    
-    console.log('🔍 高德 REST API 响应:', data)
     
     if (data.status === '1' && data.info === 'OK') {
       const regeocode = data.regeocode
@@ -74,7 +75,6 @@ export async function getAddressByCoordinates(
       throw new Error(`高德逆地理编码失败: ${data.info}`)
     }
   } catch (error) {
-    console.error('✗ 高德 REST API 错误:', error)
     throw error
   }
 }
@@ -85,10 +85,19 @@ export async function getAddressByCoordinates(
 export async function getAmapLocation(): Promise<any> {
   try {
     const AMap = await initAMap()
+    
     const geolocation = new AMap.Geolocation({
-      enableHighAccuracy: true,
-      timeout: 10000,
-      convert: true, // 自动转换为高德坐标
+      enableHighAccuracy: false,
+      timeout: 8000,
+      maximumAge: 0,
+      convert: true,
+      showButton: false,
+      showMarker: false,
+      showCircle: false,
+      panToLocation: false,
+      zoomToAccuracy: false,
+      noIpLocate: 0,
+      noGeoLocation: 0,
     })
 
     return new Promise((resolve, reject) => {
@@ -97,23 +106,106 @@ export async function getAmapLocation(): Promise<any> {
           const position = result.position
           const addressComponent = result.addressComponent || {}
           
-          resolve({
-            success: true,
-            latitude: position.lat,
-            longitude: position.lng,
-            accuracy: result.accuracy,
-            address: result.formattedAddress || '',
-            province: addressComponent.province || '',
-            city: addressComponent.city || '',
-            district: addressComponent.district || '',
-          })
+          const hasAddressComponent = addressComponent && Object.keys(addressComponent).length > 0
+          const hasFormattedAddress = result.formattedAddress && result.formattedAddress.trim() !== ''
+          
+          // 如果高德没有返回地址信息，使用高德逆地理编码 API
+          if (!hasAddressComponent && !hasFormattedAddress) {
+            const location = `${position.lng},${position.lat}`
+            const regeoUrl = `https://restapi.amap.com/v3/geocode/regeo?key=${AMAP_CONFIG.key}&location=${location}&output=json`
+            
+            fetch(regeoUrl, {
+              signal: AbortSignal.timeout(8000)
+            })
+              .then(res => res.json())
+              .then(data => {
+                
+                if (data.status === '1' && data.regeocode) {
+                  const regeocode = data.regeocode
+                  const addrComp = regeocode.addressComponent || {}
+                  
+                  resolve({
+                    success: true,
+                    latitude: position.lat,
+                    longitude: position.lng,
+                    accuracy: result.accuracy,
+                    address: regeocode.formatted_address || '',
+                    province: addrComp.province || '',
+                    city: addrComp.city || addrComp.province || '',
+                    district: addrComp.district || '',
+                    township: addrComp.township || '',
+                    street: addrComp.streetNumber?.street || '',
+                  })
+                } else {
+                  // 高德 API 也失败，返回坐标
+                  resolve({
+                    success: true,
+                    latitude: position.lat,
+                    longitude: position.lng,
+                    accuracy: result.accuracy,
+                    address: '',
+                    province: '',
+                    city: '',
+                    district: '',
+                    township: '',
+                    street: '',
+                  })
+                }
+              })
+              .catch(error => {
+                // API 失败，仅返回坐标
+                resolve({
+                  success: true,
+                  latitude: position.lat,
+                  longitude: position.lng,
+                  accuracy: result.accuracy,
+                  address: '',
+                  province: '',
+                  city: '',
+                  district: '',
+                  township: '',
+                  street: '',
+                })
+              })
+          } else {
+            // 高德返回了地址信息，直接使用
+            let city = addressComponent.city || ''
+            let province = addressComponent.province || ''
+            let district = addressComponent.district || ''
+            
+            // 如果高德没有返回city，尝试从formattedAddress解析
+            if (!city && result.formattedAddress) {
+              const match = result.formattedAddress.match(/^(.+?省)?(.+?市)/)
+              if (match) {
+                if (match[1]) province = match[1]
+                if (match[2]) city = match[2]
+              }
+            }
+            
+            // 处理直辖市和地级市（如中山市）
+            if (!city && province && province.includes('市')) {
+              city = province
+            }
+            
+            resolve({
+              success: true,
+              latitude: position.lat,
+              longitude: position.lng,
+              accuracy: result.accuracy,
+              address: result.formattedAddress || '',
+              province: province,
+              city: city,
+              district: district,
+              township: addressComponent.township || '',
+              street: addressComponent.street || '',
+            })
+          }
         } else {
           reject(new Error(result.message || '高德定位失败'))
         }
       })
     })
   } catch (error) {
-    console.error('✗ 高德定位异常:', error)
     throw error
   }
 }

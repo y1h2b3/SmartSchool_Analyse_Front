@@ -49,7 +49,7 @@
 
 <template>
   <div class="service-content">
-    <el-descriptions title="热门服务" column="4">
+    <el-descriptions title="热门服务" :column="4">
       <el-descriptions-item v-for="item in services" :key="item.path">
         <div class="service-item" @click="goToPath(item.path)">
           <img :src="item.image" mode="scaleToFill" class="logo" />

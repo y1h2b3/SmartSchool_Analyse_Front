@@ -17,7 +17,7 @@
       <div class="titleBox">
         <div
           class="logo"
-          :style="{ backgroundImage: `url(./src/assets/image/index/${option.image}.png)` }"
+          :style="option.image ? { backgroundImage: `url(./src/assets/image/index/${option.image}.png)` } : {}"
         ></div>
         <span class="title">
           {{ option.name || '指标名称' }}

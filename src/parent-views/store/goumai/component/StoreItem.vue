@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-  import { reactive, ref, onBeforeMount } from 'vue'
+  import { reactive, ref, onBeforeMount, shallowRef } from 'vue'
+  import { FirstAidKit, Box, Goods, ShoppingBag, ShoppingCart, Briefcase } from '@element-plus/icons-vue'
   // 用户是否屏幕放大
   import { useSettingStore } from '@/store/modules/setting'
   import StoreBuyDialog from './StoreBuyDialog.vue'
@@ -53,6 +54,23 @@
   const formatDate = (date: Date) => {
     return dayjs(date).format('YYYY-MM-DD hh:mm:ss')
   }
+  // 药品图标数组（多个急救箱增加出现概率）
+  const drugIcons = [
+    shallowRef(FirstAidKit),
+    shallowRef(FirstAidKit),
+    shallowRef(FirstAidKit),
+    shallowRef(FirstAidKit),
+    shallowRef(Box),
+    shallowRef(Goods),
+    shallowRef(ShoppingBag),
+    shallowRef(ShoppingCart),
+    shallowRef(Briefcase),
+  ]
+  // 随机获取图标
+  const getRandomIcon = () => {
+    const randomIndex = Math.floor(Math.random() * drugIcons.length)
+    return drugIcons[randomIndex]
+  }
   // 刷新数据
   const freshData = () => {
     getType()
@@ -69,6 +87,7 @@
         tableList.value[i].notes = tableList.value[i].notes ? tableList.value[i].notes : '无'
         tableList.value[i].createTime = formatDate(tableList.value[i].createTime)
         tableList.value[i].updateTime = formatDate(tableList.value[i].updateTime)
+        tableList.value[i].icon = getRandomIcon()
       }
       total.value = resp.total
       console.log(tableList.value)
@@ -154,7 +173,11 @@
           :style="{ width: `${settingStore.isCollapse ? 286 : 323}px !important` }"
         >
           <div class="left">
-            <div class="logo"></div>
+            <div class="logo">
+              <el-icon :size="60" color="#409EFF">
+                <component :is="item.icon" />
+              </el-icon>
+            </div>
           </div>
           <div class="right">
             <div>
@@ -222,9 +245,9 @@
           .logo {
             width: 100%;
             height: 100%;
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-image: url('./src/assets/image/index/商品.png');
+            display: flex;
+            justify-content: center;
+            align-items: center;
           }
         }
         .right {

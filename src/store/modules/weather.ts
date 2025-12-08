@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { getLocation, getGPSLocation, getAmapLocation, getIPLocation, getCityLocation, type LocationData } from '@/utils/location'
+import { getLocation, getAmapLocation, getIPLocation, getCityLocation, clearLocationCache, type LocationData } from '@/utils/location'
 import { getFullWeatherData, getCurrentWeather, type WeatherData } from '@/api/weather'
 
 export const useWeatherStore = defineStore({
@@ -54,7 +54,7 @@ export const useWeatherStore = defineStore({
   },
   actions: {
     /**
-     * 获取定位信息（智能三级降级：GPS → 高德 → IP）
+     * 获取定位信息（智能降级：高德 → 默认中山）
      */
     async getLocationInfo(forceUpdate = false): Promise<LocationData | null> {
       // 如果有缓存且不强制更新，直接返回
@@ -65,10 +65,8 @@ export const useWeatherStore = defineStore({
         const location = await getLocation()
         this.locationInfo = location
         this.lastLocationUpdateTime = Date.now()
-        console.log('✅ 定位成功:', location)
         return location
       } catch (error: any) {
-        console.error('❌ 定位失败:', error)
         return null
       } finally {
         this.isLocating = false
@@ -76,8 +74,9 @@ export const useWeatherStore = defineStore({
     },
 
     /**
-     * 仅使用 GPS 定位
+     * 仅使用 GPS 定位（已禁用，GPS 功能已移除）
      */
+    /* 已删除 GPS 定位功能
     async getGPSLocationOnly(): Promise<LocationData | null> {
       this.isLocating = true
       try {
@@ -85,13 +84,14 @@ export const useWeatherStore = defineStore({
         this.locationInfo = location
         this.lastLocationUpdateTime = Date.now()
         return location
-      } catch (error) {
-        console.error('GPS 定位失败:', error)
+      } catch (error: any) {
+        console.error('GPS定位失败:', error)
         return null
       } finally {
         this.isLocating = false
       }
     },
+    */
 
     /**
      * 仅使用高德地图定位
@@ -104,7 +104,6 @@ export const useWeatherStore = defineStore({
         this.lastLocationUpdateTime = Date.now()
         return location
       } catch (error) {
-        console.error('高德地图定位失败:', error)
         return null
       } finally {
         this.isLocating = false
@@ -122,7 +121,6 @@ export const useWeatherStore = defineStore({
         this.lastLocationUpdateTime = Date.now()
         return location
       } catch (error) {
-        console.error('IP 定位失败:', error)
         return null
       } finally {
         this.isLocating = false
@@ -143,10 +141,8 @@ export const useWeatherStore = defineStore({
         const location = await getCityLocation(cityName)
         this.locationInfo = location
         this.lastLocationUpdateTime = Date.now()
-        console.log('✅ 手动设置位置成功:', location)
         return location
       } catch (error: any) {
-        console.error('❌ 手动设置位置失败:', error)
         throw error
       } finally {
         this.isLocating = false
@@ -168,7 +164,6 @@ export const useWeatherStore = defineStore({
       }
 
       if (!this.locationInfo) {
-        console.error('❌ 缺少定位信息，无法获取天气')
         return null
       }
 
@@ -180,10 +175,8 @@ export const useWeatherStore = defineStore({
         )
         this.weatherData = weather
         this.lastWeatherUpdateTime = Date.now()
-        console.log('✅ 天气数据获取成功:', weather)
         return weather
       } catch (error: any) {
-        console.error('❌ 天气数据获取失败:', error)
         return null
       } finally {
         this.isFetchingWeather = false
@@ -212,7 +205,6 @@ export const useWeatherStore = defineStore({
         this.lastWeatherUpdateTime = Date.now()
         return weather
       } catch (error) {
-        console.error('❌ 天气获取失败:', error)
         return null
       } finally {
         this.isFetchingWeather = false
@@ -239,7 +231,6 @@ export const useWeatherStore = defineStore({
             )
           })
           .catch((error) => {
-            console.log(error)
             this.addressInfo = null
             reject(this.addressInfo)
           })
@@ -255,7 +246,8 @@ export const useWeatherStore = defineStore({
       this.addressInfo = null
       this.lastLocationUpdateTime = null
       this.lastWeatherUpdateTime = null
-      console.log('🗑️ 已清除所有缓存')
+      // 清除 localStorage 中的定位缓存
+      clearLocationCache()
     },
 
     /**
@@ -265,7 +257,8 @@ export const useWeatherStore = defineStore({
       this.locationInfo = null
       this.addressInfo = null
       this.lastLocationUpdateTime = null
-      console.log('🗑️ 已清除定位缓存')
+      // 清除 localStorage 中的定位缓存
+      clearLocationCache()
     },
 
     /**
@@ -274,7 +267,6 @@ export const useWeatherStore = defineStore({
     resetWeather() {
       this.weatherData = null
       this.lastWeatherUpdateTime = null
-      console.log('🗑️ 已清除天气缓存')
     },
   },
   persist: {
