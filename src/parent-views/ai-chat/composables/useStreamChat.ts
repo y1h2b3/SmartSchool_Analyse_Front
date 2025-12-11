@@ -21,6 +21,7 @@ export function useStreamChat() {
     options?: {
       enableWebSearch?: boolean
       enableDeepThinking?: boolean
+      enableMcp?: boolean
       onChunk?: (chunk: string) => void
       onComplete?: () => void
       onError?: (err: Error) => void
@@ -35,10 +36,11 @@ export function useStreamChat() {
       error.value = null
 
       // 根据选项选择URL
-      const url = options?.enableWebSearch || options?.enableDeepThinking
+      const url = options?.enableWebSearch || options?.enableDeepThinking || options?.enableMcp
         ? getAdvancedStreamChatUrl(message, chatId, {
             enableWebSearch: options.enableWebSearch,
             enableDeepThinking: options.enableDeepThinking,
+            enableMcp: options.enableMcp,
           })
         : getStreamChatUrl(message, chatId)
 

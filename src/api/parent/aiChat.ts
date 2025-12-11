@@ -44,12 +44,14 @@ export function getAdvancedStreamChatUrl(
   options?: {
     enableWebSearch?: boolean
     enableDeepThinking?: boolean
+    enableMcp?: boolean
   }
 ): string {
   const encodedMessage = encodeURIComponent(message)
   const encodedChatId = encodeURIComponent(chatId)
   const webSearch = options?.enableWebSearch ? 'true' : 'false'
-  const deepThinking = options?.enableDeepThinking ? 'true' : 'false'
+  // MCP 和深度思考合并为同一个参数（后端 enableDeepThinking 控制 MCP 服务）
+  const deepThinking = (options?.enableDeepThinking || options?.enableMcp) ? 'true' : 'false'
   
   return `/api${AI_BASE_URL}/advanced/stream?message=${encodedMessage}&chatId=${encodedChatId}&enableWebSearch=${webSearch}&enableDeepThinking=${deepThinking}`
 }
@@ -109,6 +111,7 @@ export function generateHealthReport(uid: string, username?: string) {
       uid,
       username: username || '用户',
     },
+    timeout: 60000, // AI生成报告可能需要较长时间，设置60秒超时
   })
 }
 

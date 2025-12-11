@@ -84,10 +84,10 @@ export function useAIChat() {
       chatStore.updateSessionTitle(session.id, userMessage.content.substring(0, 50))
     }
 
-    // 创建AI消息占位
+    // 创建AI消息占位，初始显示"正在思考中..."
     const aiMessage = chatStore.addMessage(currentSessionId, {
       role: 'assistant',
-      content: '',
+      content: '正在思考中...',
       streaming: true,
     })
 
@@ -105,10 +105,13 @@ export function useAIChat() {
       startStream(messageText, chatId, {
         enableWebSearch: settings.useAdvancedMode && settings.enableWebSearch,
         enableDeepThinking: settings.useAdvancedMode && settings.enableDeepThinking,
+        enableMcp: settings.useAdvancedMode && settings.enableMcp,
         
         // 接收流式数据
         onChunk: (chunk: string) => {
-          chatStore.updateStreamingMessage(currentSessionId, aiMessage.id, aiMessage.content + chunk)
+          // 第一次收到数据时，替换掉"正在思考中..."
+          const currentContent = aiMessage.content === '正在思考中...' ? '' : aiMessage.content
+          chatStore.updateStreamingMessage(currentSessionId, aiMessage.id, currentContent + chunk)
         },
         
         // 流式完成
@@ -167,42 +170,53 @@ export function useAIChat() {
       return
     }
 
-    const userId = userStore.userInfo?.id || 'unknown'
-    const userName = userStore.userInfo?.name || '用户'
+    // 家长端用户ID字段是 studentId，不是 id
+    const userId = userStore.userInfo?.studentId || userStore.userInfo?.id || 'unknown'
+    const userName = userStore.userInfo?.username || userStore.userInfo?.name || '用户'
+
+    // 确保有当前会话
+    let currentSessionId = chatStore.currentSessionId
+    if (!currentSessionId) {
+      const session = chatStore.createSession('健康报告')
+      currentSessionId = session.id
+    }
+
+    // 添加用户消息
+    chatStore.addMessage(currentSessionId, {
+      role: 'user',
+      content: '生成我的健康报告',
+    })
+
+    // 添加AI「正在生成」占位消息
+    const loadingMessage = chatStore.addMessage(currentSessionId, {
+      role: 'assistant',
+      content: '正在生成健康报告，请稍候...',
+      streaming: true,
+    })
+    chatStore.setStreaming(true)
 
     try {
-      ElMessage.info('正在生成健康报告，请稍候...')
-      
       const reportData = await generateHealthReport(userId, userName)
-      
-      // 确保有当前会话
-      let currentSessionId = chatStore.currentSessionId
-      if (!currentSessionId) {
-        const session = chatStore.createSession('健康报告')
-        currentSessionId = session.id
-      }
 
-      // 添加用户消息
-      chatStore.addMessage(currentSessionId, {
-        role: 'user',
-        content: '生成我的健康报告',
-      })
-
-      // 构建报告内容
-      let reportContent = `# ${reportData.title}\n\n`
-      reportData.suggestions.forEach((suggestion, index) => {
+      // 构建报告内容（去掉"家长"两字）
+      const cleanTitle = reportData.title.replace('家长', '')
+      let reportContent = `# ${cleanTitle}\n\n`
+      reportData.suggestions.forEach((suggestion: string, index: number) => {
         reportContent += `${index + 1}. ${suggestion}\n\n`
       })
 
-      // 添加AI消息
-      chatStore.addMessage(currentSessionId, {
-        role: 'assistant',
-        content: reportContent,
-      })
+      // 更新AI消息为最终报告
+      chatStore.updateStreamingMessage(currentSessionId, loadingMessage.id, reportContent)
+      chatStore.completeStreamingMessage(currentSessionId, loadingMessage.id)
+      chatStore.setStreaming(false)
 
       ElMessage.success('健康报告生成成功')
     } catch (error) {
       console.error('生成健康报告失败:', error)
+      // 更新为错误提示
+      chatStore.updateStreamingMessage(currentSessionId, loadingMessage.id, '生成健康报告失败，请稍后重试。')
+      chatStore.completeStreamingMessage(currentSessionId, loadingMessage.id)
+      chatStore.setStreaming(false)
       ElMessage.error('生成健康报告失败，请稍后重试')
     }
   }

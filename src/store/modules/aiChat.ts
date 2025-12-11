@@ -23,6 +23,7 @@ export const useAiChatStore = defineStore({
     settings: {
       enableWebSearch: false,
       enableDeepThinking: false,
+      enableMcp: false,
       useAdvancedMode: false,
       autoScroll: true,
       showTimestamp: true,
@@ -253,6 +254,7 @@ export const useAiChatStore = defineStore({
       this.settings = {
         enableWebSearch: false,
         enableDeepThinking: false,
+        enableMcp: false,
         useAdvancedMode: false,
         autoScroll: true,
         showTimestamp: true,

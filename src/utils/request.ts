@@ -41,14 +41,21 @@ request.interceptors.response.use(
     }
   },
   async (error) => {
-    if (error.response.status === 401) {
-      //令牌过期了
-      ElMessage.warning('登录超时')
-      await userStore.logout()
-      router.push('/login')
+    // 检查是否有响应对象（网络错误或超时时可能没有）
+    if (error.response) {
+      if (error.response.status === 401) {
+        //令牌过期了
+        ElMessage.warning('登录超时')
+        await userStore.logout()
+        router.push('/login')
+        return Promise.reject(error)
+      }
+    } else if (error.code === 'ECONNABORTED') {
+      // 请求超时
+      ElMessage.error('请求超时，请稍后重试')
       return Promise.reject(error)
     }
-    ElMessage.error(error.message)
+    ElMessage.error(error.message || '请求失败')
     return Promise.reject(error)
   },
 )

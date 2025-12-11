@@ -64,9 +64,12 @@
             class="message-item"
             :class="message.role"
           >
-            <div class="message-avatar">
-              <el-icon v-if="message.role === 'user'"><User /></el-icon>
-              <el-icon v-else><ChatLineRound /></el-icon>
+            <div class="message-avatar-wrapper">
+              <div class="message-avatar">
+                <el-icon v-if="message.role === 'user'"><User /></el-icon>
+                <img v-else src="/ZzzzhAvatar.jpg" alt="Zzzzh" class="ai-avatar-img" />
+              </div>
+              <span v-if="message.role === 'assistant'" class="ai-name">Zzzzh</span>
             </div>
             <div class="message-content">
               <div class="message-text" v-html="renderMarkdown(message.content)"></div>
@@ -126,6 +129,16 @@
               >
                 <el-icon><TrendCharts /></el-icon>
               </el-button>
+              <el-button 
+                v-if="settings.useAdvancedMode"
+                :type="settings.enableMcp ? 'primary' : ''"
+                size="small"
+                @click="toggleMcp"
+                circle
+                title="MCP服务（地图、天气等）"
+              >
+                <el-icon><Location /></el-icon>
+              </el-button>
             </div>
             <div class="right-controls">
               <span class="tip">Ctrl + Enter 发送</span>
@@ -157,7 +170,7 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick, watch } from 'vue'
-import { Plus, Delete, User, Search, TrendCharts, Promotion, ChatLineRound } from '@element-plus/icons-vue'
+import { Plus, Delete, User, Search, TrendCharts, Promotion, ChatLineRound, Location } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
 import { useAIChat } from './composables/useAIChat'
 import { useAiChatStore } from '@/store/modules/aiChat'
@@ -217,6 +230,10 @@ const toggleWebSearch = () => {
 
 const toggleDeepThinking = () => {
   chatStore.updateSettings({ enableDeepThinking: !settings.value.enableDeepThinking })
+}
+
+const toggleMcp = () => {
+  chatStore.updateSettings({ enableMcp: !settings.value.enableMcp })
 }
 
 // 滚动到底部
@@ -527,6 +544,14 @@ if (sessions.value.length === 0) {
   margin-bottom: 4px;
 }
 
+.message-avatar-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
 .message-avatar {
   width: 36px;
   height: 36px;
@@ -536,11 +561,24 @@ if (sessions.value.length === 0) {
   justify-content: center;
   background: #f0f0f0;
   flex-shrink: 0;
+  overflow: hidden;
   
   .el-icon {
     font-size: 18px;
     color: #606266;
   }
+
+  .ai-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.ai-name {
+  font-size: 10px;
+  color: #909399;
+  white-space: nowrap;
 }
 
 .message-content {

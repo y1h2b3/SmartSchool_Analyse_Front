@@ -38,6 +38,7 @@ export interface Message {
 export interface ChatSettings {
   enableWebSearch: boolean // 是否启用联网搜索
   enableDeepThinking: boolean // 是否启用深度思考
+  enableMcp: boolean // 是否启用 MCP 服务（地图、天气等工具）
   useAdvancedMode: boolean // 是否使用高级模式
   autoScroll: boolean // 是否自动滚动到底部
   showTimestamp: boolean // 是否显示时间戳
