@@ -142,16 +142,29 @@ export function useAIChat() {
    * 生成健康报告
    */
   const generateReport = async (): Promise<void> => {
-    const userId = userStore.userInfo?.id
-    if (!userId) {
+    // 调试信息：输出当前登录状态
+    console.log('[健康报告] 登录状态检查:', {
+      hasToken: !!userStore.token,
+      token: userStore.token,
+      userInfo: userStore.userInfo,
+      userInfoKeys: Object.keys(userStore.userInfo || {}),
+      userId: userStore.userInfo?.id,
+    })
+    
+    // 检查登录状态：同时检查 token 和 userInfo
+    if (!userStore.token || !userStore.userInfo || Object.keys(userStore.userInfo).length === 0) {
+      console.warn('[健康报告] 登录验证失败')
       ElMessage.warning('请先登录')
       return
     }
 
+    const userId = userStore.userInfo?.id || 'unknown'
+    const userName = userStore.userInfo?.name || '用户'
+
     try {
       ElMessage.info('正在生成健康报告，请稍候...')
       
-      const reportData = await generateHealthReport(userId, userStore.userInfo?.name)
+      const reportData = await generateHealthReport(userId, userName)
       
       // 确保有当前会话
       let currentSessionId = chatStore.currentSessionId
