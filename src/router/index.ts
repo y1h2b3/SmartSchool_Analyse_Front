@@ -30,6 +30,7 @@ import parentStoreTableRouter from './modules/parent/store'
 import parentHealthTableRouter from './modules/parent/health'
 import parentNoticeTableRouter from './modules/parent/notice'
 import parentOrderTableRouter from './modules/parent/order'
+import parentAiChatTableRouter from './modules/parent/aiChat'
 /**
  * 教师端路由
  */
@@ -63,6 +64,7 @@ const parentRouter = [
   ...parentNoticeTableRouter,
   ...parentStoreTableRouter,
   ...parentOrderTableRouter,
+  ...parentAiChatTableRouter,
 ]
 
 const teacherRouter = [

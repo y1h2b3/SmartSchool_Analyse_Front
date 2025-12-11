@@ -1,0 +1,260 @@
+import { computed } from 'vue'
+import { ElMessage } from 'element-plus'
+import { useAiChatStore } from '@/store/modules/aiChat'
+import { useUserStore } from '@/store/modules/user'
+import { useStreamChat } from './useStreamChat'
+import { generateChatId, generateHealthReport } from '@/api/parent/aiChat'
+import type { QuickAction } from '../types'
+
+/**
+ * AI对话业务Hook
+ */
+export function useAIChat() {
+  const chatStore = useAiChatStore()
+  const userStore = useUserStore()
+  const { startStream, stopStream } = useStreamChat()
+
+  // 快捷操作模板
+  const quickActions: QuickAction[] = [
+    {
+      id: 'sleep',
+      icon: 'Moon',
+      label: '如何提高睡眠质量',
+      prompt: '如何提高睡眠质量？请给我一些实用的建议。',
+      type: 'chat',
+    },
+    {
+      id: 'exercise',
+      icon: 'Bicycle',
+      label: '运动的好处',
+      prompt: '运动的好处有哪些？请详细说明。',
+      type: 'chat',
+    },
+    {
+      id: 'diet',
+      icon: 'Coffee',
+      label: '健康饮食建议',
+      prompt: '请给我一些健康饮食的建议。',
+      type: 'chat',
+    },
+    {
+      id: 'stress',
+      icon: 'Sunny',
+      label: '压力管理方法',
+      prompt: '如何有效管理压力？请提供一些方法。',
+      type: 'chat',
+    },
+    {
+      id: 'report',
+      icon: 'Document',
+      label: '生成健康报告',
+      prompt: '帮我生成一份健康报告',
+      type: 'report',
+    },
+  ]
+
+  /**
+   * 发送消息
+   */
+  const sendMessage = async (messageText: string): Promise<void> => {
+    if (!messageText.trim()) {
+      ElMessage.warning('请输入消息内容')
+      return
+    }
+
+    // 确保有当前会话
+    let currentSessionId = chatStore.currentSessionId
+    if (!currentSessionId) {
+      const session = chatStore.createSession()
+      currentSessionId = session.id
+    }
+
+    // 添加用户消息
+    chatStore.addMessage(currentSessionId, {
+      role: 'user',
+      content: messageText.trim(),
+    })
+
+    // 创建AI消息占位
+    const aiMessage = chatStore.addMessage(currentSessionId, {
+      role: 'assistant',
+      content: '',
+      streaming: true,
+    })
+
+    // 设置流式状态
+    chatStore.setStreaming(true)
+
+    try {
+      // 生成chatId
+      const chatId = generateChatId(userStore.userInfo?.id || 'guest')
+      
+      // 获取设置
+      const settings = chatStore.settings
+      
+      // 启动流式对话
+      startStream(messageText, chatId, {
+        enableWebSearch: settings.useAdvancedMode && settings.enableWebSearch,
+        enableDeepThinking: settings.useAdvancedMode && settings.enableDeepThinking,
+        
+        // 接收流式数据
+        onChunk: (chunk: string) => {
+          chatStore.updateStreamingMessage(currentSessionId, aiMessage.id, aiMessage.content + chunk)
+        },
+        
+        // 流式完成
+        onComplete: () => {
+          chatStore.completeStreamingMessage(currentSessionId, aiMessage.id)
+          chatStore.setStreaming(false)
+        },
+        
+        // 错误处理
+        onError: (error: Error) => {
+          console.error('流式对话错误:', error)
+          chatStore.updateStreamingMessage(currentSessionId, aiMessage.id, '抱歉，发生了错误，请稍后重试。')
+          chatStore.completeStreamingMessage(currentSessionId, aiMessage.id)
+          chatStore.setStreaming(false)
+          ElMessage.error('消息发送失败')
+        },
+      })
+
+    } catch (error) {
+      console.error('发送消息失败:', error)
+      chatStore.setStreaming(false)
+      ElMessage.error('消息发送失败')
+    }
+  }
+
+  /**
+   * 处理快捷操作
+   */
+  const handleQuickAction = async (action: QuickAction): Promise<void> => {
+    if (action.type === 'report') {
+      // 生成健康报告
+      await generateReport()
+    } else {
+      // 发送快捷消息
+      await sendMessage(action.prompt)
+    }
+  }
+
+  /**
+   * 生成健康报告
+   */
+  const generateReport = async (): Promise<void> => {
+    const userId = userStore.userInfo?.id
+    if (!userId) {
+      ElMessage.warning('请先登录')
+      return
+    }
+
+    try {
+      ElMessage.info('正在生成健康报告，请稍候...')
+      
+      const reportData = await generateHealthReport(userId, userStore.userInfo?.name)
+      
+      // 确保有当前会话
+      let currentSessionId = chatStore.currentSessionId
+      if (!currentSessionId) {
+        const session = chatStore.createSession('健康报告')
+        currentSessionId = session.id
+      }
+
+      // 添加用户消息
+      chatStore.addMessage(currentSessionId, {
+        role: 'user',
+        content: '生成我的健康报告',
+      })
+
+      // 构建报告内容
+      let reportContent = `# ${reportData.title}\n\n`
+      reportData.suggestions.forEach((suggestion, index) => {
+        reportContent += `${index + 1}. ${suggestion}\n\n`
+      })
+
+      // 添加AI消息
+      chatStore.addMessage(currentSessionId, {
+        role: 'assistant',
+        content: reportContent,
+      })
+
+      ElMessage.success('健康报告生成成功')
+    } catch (error) {
+      console.error('生成健康报告失败:', error)
+      ElMessage.error('生成健康报告失败，请稍后重试')
+    }
+  }
+
+  /**
+   * 停止当前流式输出
+   */
+  const stopCurrentStream = (): void => {
+    stopStream()
+    chatStore.setStreaming(false)
+  }
+
+  /**
+   * 创建新会话
+   */
+  const createNewSession = (title?: string): void => {
+    chatStore.createSession(title)
+    ElMessage.success('已创建新会话')
+  }
+
+  /**
+   * 删除会话
+   */
+  const removeSession = (sessionId: string): void => {
+    const session = chatStore.sessions.find(s => s.id === sessionId)
+    if (session) {
+      chatStore.deleteSession(sessionId)
+      ElMessage.success(`已删除会话: ${session.title}`)
+    }
+  }
+
+  /**
+   * 切换会话
+   */
+  const switchToSession = (sessionId: string): void => {
+    chatStore.switchSession(sessionId)
+  }
+
+  /**
+   * 清空当前会话消息
+   */
+  const clearCurrentMessages = (): void => {
+    if (chatStore.currentSessionId) {
+      chatStore.clearMessages(chatStore.currentSessionId)
+      ElMessage.success('已清空消息')
+    }
+  }
+
+  /**
+   * 计算属性
+   */
+  const currentSession = computed(() => chatStore.currentSession)
+  const currentMessages = computed(() => chatStore.currentMessages)
+  const sessions = computed(() => chatStore.sortedSessions)
+  const isStreaming = computed(() => chatStore.isStreaming)
+  const settings = computed(() => chatStore.settings)
+
+  return {
+    // 数据
+    quickActions,
+    currentSession,
+    currentMessages,
+    sessions,
+    isStreaming,
+    settings,
+    
+    // 方法
+    sendMessage,
+    handleQuickAction,
+    generateReport,
+    stopCurrentStream,
+    createNewSession,
+    removeSession,
+    switchToSession,
+    clearCurrentMessages,
+  }
+}
