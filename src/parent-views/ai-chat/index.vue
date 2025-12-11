@@ -4,7 +4,8 @@
     <div class="session-list" :class="{ collapsed: isMobile && !showSessionList }">
       <div class="session-header">
         <h3>对话列表</h3>
-        <el-button type="primary" :icon="Plus" size="small" @click="createNewSession">
+        <!-- 注意：必须显式调用 createNewSession()，避免事件对象作为标题传入导致标题为 [object PointerEvent] -->
+        <el-button type="primary" :icon="Plus" size="small" @click="createNewSession()">
           新建对话
         </el-button>
       </div>
@@ -566,6 +567,7 @@ if (sessions.value.length === 0) {
 .message-text {
   line-height: 1.6;
   word-break: break-word;
+  white-space: pre-wrap; // 保留换行符并自动换行
   
   // Markdown 样式
   :deep(h1) {
@@ -592,6 +594,7 @@ if (sessions.value.length === 0) {
   
   :deep(p) {
     margin: 8px 0;
+    white-space: pre-wrap;
   }
   
   :deep(ul) {
@@ -609,6 +612,7 @@ if (sessions.value.length === 0) {
   :deep(li) {
     margin: 4px 0;
     line-height: 1.6;
+    white-space: pre-wrap;
   }
   
   :deep(code) {

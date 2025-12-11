@@ -84,8 +84,13 @@ export function useStreamChat() {
 
         for (const line of lines) {
           if (line.startsWith('data:')) {
-            const chunk = line.substring(5).trim()
-            if (chunk) {
+            // 不使用 trim()，以保留换行符
+            const chunk = line.substring(5)
+            // 如果是空行（data: 后面没有内容或只有空格），视为换行符
+            if (chunk.trim() === '') {
+              currentContent.value += '\n'
+              options?.onChunk?.('\n')
+            } else {
               currentContent.value += chunk
               options?.onChunk?.(chunk)
             }

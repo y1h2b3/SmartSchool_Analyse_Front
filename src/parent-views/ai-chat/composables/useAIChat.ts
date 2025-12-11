@@ -70,10 +70,19 @@ export function useAIChat() {
     }
 
     // 添加用户消息
-    chatStore.addMessage(currentSessionId, {
+    const userMessage = chatStore.addMessage(currentSessionId, {
       role: 'user',
       content: messageText.trim(),
     })
+
+    // 如果是该会话的第一条用户消息，并且标题还是默认“新对话”，则用问题内容更新标题
+    const currentMessages = chatStore.messagesBySession[currentSessionId] || []
+    const userMessageCount = currentMessages.filter(m => m.role === 'user').length
+    const session = chatStore.sessions.find(s => s.id === currentSessionId)
+    
+    if (session && userMessageCount === 1 && session.title === '新对话') {
+      chatStore.updateSessionTitle(session.id, userMessage.content.substring(0, 50))
+    }
 
     // 创建AI消息占位
     const aiMessage = chatStore.addMessage(currentSessionId, {
