@@ -201,8 +201,8 @@ export function useAIChat() {
       // 构建报告内容（去掉"家长"两字）
       const cleanTitle = reportData.title.replace('家长', '')
       let reportContent = `# ${cleanTitle}\n\n`
-      reportData.suggestions.forEach((suggestion: string, index: number) => {
-        reportContent += `${index + 1}. ${suggestion}\n\n`
+      reportData.suggestions.forEach((suggestion: string) => {
+        reportContent += `${suggestion}\n\n`
       })
 
       // 更新AI消息为最终报告

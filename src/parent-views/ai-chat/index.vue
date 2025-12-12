@@ -72,7 +72,11 @@
               <span v-if="message.role === 'assistant'" class="ai-name">Zzzzh</span>
             </div>
             <div class="message-content">
-              <div class="message-text" v-html="renderMarkdown(message.content)"></div>
+              <div 
+                class="message-text" 
+                :class="{ 'loading-message': isLoadingMessage(message.content) }"
+                v-html="renderMarkdown(message.content)"
+              ></div>
             </div>
             <span v-if="message.role === 'user'" class="message-time-tag">{{ formatTime(message.timestamp) }}</span>
           </div>
@@ -196,6 +200,11 @@ const scrollbarRef = ref()
 const isMobile = ref(window.innerWidth < 768)
 const showSessionList = ref(true)
 
+// 检查是否为加载中的消息
+const isLoadingMessage = (content: string) => {
+  return content === '正在思考中...' || content === '正在生成健康报告，请稍候...'
+}
+
 // 发送消息
 const handleSend = async () => {
   if (!inputMessage.value.trim() || isStreaming.value) return
@@ -259,6 +268,14 @@ watch(() => currentMessages.value, () => {
 const renderMarkdown = (text: string) => {
   let html = text
   
+  // 0. 处理思考内容 <think>...</think> 标签，转换为灰色样式
+  // 支持流式输出：未闭合的 <think> 标签也会被处理
+  html = html.replace(/<think>([\s\S]*?)<\/think>/g, '<div class="ai-thinking">$1</div>')
+  // 处理未闭合的 <think> 标签（流式输出中）
+  if (html.includes('<think>') && !html.includes('</think>')) {
+    html = html.replace(/<think>([\s\S]*)$/, '<div class="ai-thinking">$1</div>')
+  }
+  
   // 1. 代码块 (必须先处理，避免内部被转换)
   html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
   
@@ -277,19 +294,90 @@ const renderMarkdown = (text: string) => {
   // 5. 链接
   html = html.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank">$1</a>')
   
-  // 6. 列表 (先标记列表项)
-  // 无序列表
-  html = html.replace(/^[\s]*[-*+]\s+(.+)$/gm, '___UL___<li>$1</li>')
-  // 有序列表
-  html = html.replace(/^[\s]*\d+\.\s+(.+)$/gm, '___OL___<li>$1</li>')
+  // 6. 列表处理 - 按行分割后处理
+  const lines = html.split('\n')
+  const processedLines: string[] = []
+  let inOrderedList = false
+  let inUnorderedList = false
+  let olCounter = 0  // 有序列表计数器
   
-  // 包装列表
-  html = html.replace(/(___UL___<li>[\s\S]*?<\/li>)(?!___UL___)/g, '<ul>$1</ul>')
-  html = html.replace(/(___OL___<li>[\s\S]*?<\/li>)(?!___OL___)/g, '<ol>$1</ol>')
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    const olMatch = line.match(/^\s*\d+\.\s+(.+)$/)
+    const ulMatch = line.match(/^\s*[-*+]\s+(.+)$/)
+    const isEmptyLine = line.trim() === ''
+    
+    // 检查后面是否还有列表项（用于判断空行是否在列表中间）
+    const hasMoreListItems = () => {
+      for (let j = i + 1; j < lines.length; j++) {
+        const nextLine = lines[j].trim()
+        if (nextLine === '') continue
+        if (/^\d+\.\s+/.test(nextLine)) return 'ol'
+        if (/^[-*+]\s+/.test(nextLine)) return 'ul'
+        return null
+      }
+      return null
+    }
+    
+    if (olMatch) {
+      if (!inOrderedList) {
+        if (inUnorderedList) {
+          processedLines.push('</ul>')
+          inUnorderedList = false
+        }
+        processedLines.push('<ol>')
+        inOrderedList = true
+        olCounter = 0
+      }
+      olCounter++
+      processedLines.push(`<li>${olMatch[1]}</li>`)
+    } else if (ulMatch) {
+      if (!inUnorderedList) {
+        if (inOrderedList) {
+          processedLines.push('</ol>')
+          inOrderedList = false
+        }
+        processedLines.push('<ul>')
+        inUnorderedList = true
+      }
+      processedLines.push(`<li>${ulMatch[1]}</li>`)
+    } else if (isEmptyLine && (inOrderedList || inUnorderedList)) {
+      // 空行在列表中，检查后面是否还有同类型列表项
+      const nextListType = hasMoreListItems()
+      if ((inOrderedList && nextListType === 'ol') || (inUnorderedList && nextListType === 'ul')) {
+        // 跳过空行，保持列表继续
+        continue
+      } else {
+        // 关闭列表
+        if (inOrderedList) {
+          processedLines.push('</ol>')
+          inOrderedList = false
+        }
+        if (inUnorderedList) {
+          processedLines.push('</ul>')
+          inUnorderedList = false
+        }
+        processedLines.push(line)
+      }
+    } else {
+      // 关闭之前的列表
+      if (inOrderedList) {
+        processedLines.push('</ol>')
+        inOrderedList = false
+      }
+      if (inUnorderedList) {
+        processedLines.push('</ul>')
+        inUnorderedList = false
+      }
+      processedLines.push(line)
+    }
+  }
   
-  // 清理列表标记
-  html = html.replace(/___UL___/g, '')
-  html = html.replace(/___OL___/g, '')
+  // 关闭未关闭的列表
+  if (inOrderedList) processedLines.push('</ol>')
+  if (inUnorderedList) processedLines.push('</ul>')
+  
+  html = processedLines.join('\n')
   
   // 7. 段落和换行
   html = html.replace(/\n\n/g, '</p><p>')
@@ -305,6 +393,12 @@ const renderMarkdown = (text: string) => {
   // 9. 修复列表外的段落标签
   html = html.replace(/<p>(<ul>|<ol>|<h[1-3]>|<pre>)/g, '$1')
   html = html.replace(/(<\/ul>|<\/ol>|<\/h[1-3]>|<\/pre>)<\/p>/g, '$1')
+  // 清理列表内的br
+  html = html.replace(/<ol><br>/g, '<ol>')
+  html = html.replace(/<ul><br>/g, '<ul>')
+  html = html.replace(/<br><\/ol>/g, '</ol>')
+  html = html.replace(/<br><\/ul>/g, '</ul>')
+  html = html.replace(/<\/li><br><li>/g, '</li><li>')
   
   return html
 }
@@ -502,7 +596,7 @@ if (sessions.value.length === 0) {
 .message-item {
   display: flex;
   gap: 12px;
-  align-items: flex-end;
+  align-items: flex-start;
   
   &.user {
     flex-direction: row-reverse;
@@ -540,8 +634,8 @@ if (sessions.value.length === 0) {
   padding: 2px 8px;
   border-radius: 10px;
   white-space: nowrap;
-  align-self: flex-end;
-  margin-bottom: 4px;
+  align-self: flex-start;
+  margin-top: 4px;
 }
 
 .message-avatar-wrapper {
@@ -606,6 +700,25 @@ if (sessions.value.length === 0) {
   line-height: 1.6;
   word-break: break-word;
   white-space: pre-wrap; // 保留换行符并自动换行
+  
+  // 加载中消息的动画效果
+  &.loading-message {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #606266;
+    
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #e0e0e0;
+      border-top-color: #409eff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+  }
   
   // Markdown 样式
   :deep(h1) {
@@ -697,6 +810,29 @@ if (sessions.value.length === 0) {
     display: block;
     content: '';
     margin: 4px 0;
+  }
+  
+  // AI思考内容样式 - 灰色斜体
+  :deep(.ai-thinking) {
+    color: #909399;
+    font-style: italic;
+    padding: 12px 16px;
+    margin: 8px 0;
+    background: #f5f7fa;
+    border-left: 3px solid #c0c4cc;
+    border-radius: 4px;
+    font-size: 0.9em;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    
+    // 思考内容中的标签也要灰色
+    strong, em, code, a {
+      color: #909399;
+    }
+    
+    code {
+      background: rgba(0, 0, 0, 0.05);
+    }
   }
 }
 
@@ -794,4 +930,15 @@ if (sessions.value.length === 0) {
     }
   }
 }
+
+// Loading 动画
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
 </style>
